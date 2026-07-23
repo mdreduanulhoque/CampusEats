@@ -3,7 +3,6 @@ const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
-// All order creation routes require Customer role
 router.use(verifyToken);
 
 // 1. Get user's today spending summary & daily limit info
@@ -11,7 +10,7 @@ router.get('/daily-limit-status', async (req, res) => {
   try {
     const userId = req.user.user_id;
 
-    // Get user daily limit
+    // Get user daily limit and loyalty points
     const [users] = await db.query('SELECT daily_limit, loyalty_points FROM Users WHERE user_id = ?', [userId]);
     if (users.length === 0) {
       return res.status(404).json({ status: 'error', message: 'User not found.' });
@@ -44,7 +43,7 @@ router.get('/daily-limit-status', async (req, res) => {
   }
 });
 
-// 2. Place a new order (POST /api/orders)
+// 2. Place a new order with loyalty points redemption option (POST /api/orders)
 router.post('/', requireRole('customer'), async (req, res) => {
   const { pickup_time, items } = req.body;
   const userId = req.user.user_id;
@@ -71,14 +70,15 @@ router.post('/', requireRole('customer'), async (req, res) => {
     const [userRows] = await connection.query('SELECT daily_limit, loyalty_points FROM Users WHERE user_id = ? FOR UPDATE', [userId]);
     const user = userRows[0];
     const dailyLimit = parseFloat(user.daily_limit) || 0.00;
+    const currentPoints = parseInt(user.loyalty_points) || 0;
 
-    // 2. Verify pricing & availability for each item in backend
     let calculatedTotal = 0.00;
+    let totalPointsNeeded = 0;
     const verifiedOrderItems = [];
 
     for (const cartItem of items) {
       const [itemRows] = await connection.query(
-        'SELECT item_id, name, price, is_active FROM MenuItems WHERE item_id = ?',
+        'SELECT item_id, name, price, points_required, is_reward_eligible, is_active FROM MenuItems WHERE item_id = ?',
         [cartItem.item_id]
       );
 
@@ -91,9 +91,18 @@ router.post('/', requireRole('customer'), async (req, res) => {
       const menuItem = itemRows[0];
       const quantity = parseInt(cartItem.quantity) || 1;
       const isFreeReward = !!cartItem.is_free_reward;
+
+      if (isFreeReward) {
+        if (!menuItem.is_reward_eligible || !menuItem.points_required) {
+          await connection.rollback();
+          connection.release();
+          return res.status(400).json({ status: 'error', message: `Item "${menuItem.name}" is not eligible for point redemption.` });
+        }
+        totalPointsNeeded += menuItem.points_required * quantity;
+      }
+
       const unitPrice = isFreeReward ? 0.00 : parseFloat(menuItem.price);
       const subtotal = unitPrice * quantity;
-
       calculatedTotal += subtotal;
 
       verifiedOrderItems.push({
@@ -103,6 +112,16 @@ router.post('/', requireRole('customer'), async (req, res) => {
         unit_price: unitPrice,
         subtotal,
         is_free_reward: isFreeReward
+      });
+    }
+
+    // Check if customer has enough loyalty points for redemptions
+    if (totalPointsNeeded > 0 && currentPoints < totalPointsNeeded) {
+      await connection.rollback();
+      connection.release();
+      return res.status(400).json({
+        status: 'error',
+        message: `Insufficient loyalty points! You need ${totalPointsNeeded} points to redeem these items, but you only have ${currentPoints} points.`
       });
     }
 
@@ -125,9 +144,17 @@ router.post('/', requireRole('customer'), async (req, res) => {
         connection.release();
         return res.status(400).json({
           status: 'error',
-          message: `Daily spending limit exceeded! Your limit is $${dailyLimit.toFixed(2)}. You have spent $${todaySpent.toFixed(2)} today. Adding this order ($${calculatedTotal.toFixed(2)}) brings total to $${newTotalSpent.toFixed(2)}.`
+          message: `Daily spending limit exceeded! Limit: $${dailyLimit.toFixed(2)}. Spent today: $${todaySpent.toFixed(2)}. Order total: $${calculatedTotal.toFixed(2)}.`
         });
       }
+    }
+
+    // Deduct redeemed loyalty points if any
+    if (totalPointsNeeded > 0) {
+      await connection.query(
+        'UPDATE Users SET loyalty_points = loyalty_points - ? WHERE user_id = ?',
+        [totalPointsNeeded, userId]
+      );
     }
 
     // 4. Insert Order
@@ -161,6 +188,7 @@ router.post('/', requireRole('customer'), async (req, res) => {
         pickup_time: formattedPickupTime,
         status: 'pending',
         payment_method: 'cash_on_pickup',
+        payment_status: 'unpaid',
         items: verifiedOrderItems
       }
     });

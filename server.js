@@ -11,6 +11,8 @@ const adminRoutes = require('./routes/admin');
 const menuRoutes = require('./routes/menu');
 const orderRoutes = require('./routes/orders');
 const kitchenRoutes = require('./routes/kitchen');
+const customerRoutes = require('./routes/customer');
+const reviewRoutes = require('./routes/reviews');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +28,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/kitchen', kitchenRoutes);
+app.use('/api/customer', customerRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Serve static frontend files from 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));

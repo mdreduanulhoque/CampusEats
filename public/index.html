@@ -3,9 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CampusEats - Canteen Pre-order & Cart</title>
+  <title>CampusEats - Canteen Pre-order & History</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
+    .nav-tabs {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      padding: 0.8rem 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
     .menu-header {
       display: flex;
       justify-content: space-between;
@@ -129,7 +157,7 @@
       font-size: 0.85rem;
       color: #facc15;
     }
-    
+
     /* Cart Button Floating */
     .cart-btn-nav {
       position: relative;
@@ -151,7 +179,7 @@
       font-weight: 700;
     }
 
-    /* Modal Overlay & Drawer */
+    /* Modal Overlay & Cards */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -196,6 +224,23 @@
       border-radius: 12px;
       margin-top: 1rem;
     }
+    .history-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.2rem;
+    }
+    .star-rating {
+      display: flex;
+      gap: 0.4rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--border-color);
+    }
+    .star-rating span.active {
+      color: #facc15;
+    }
   </style>
 </head>
 <body>
@@ -213,8 +258,8 @@
   </nav>
 
   <div class="container">
-    <!-- User Banner with Spending Limit Indicator -->
-    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 1.8rem 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+    <!-- User Banner -->
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 1.8rem 2rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
       <div>
         <h1 style="font-size: 1.8rem; margin-bottom: 0.4rem;">Pre-order Your Canteen Meals 🍽️</h1>
         <p style="color: var(--text-muted);">Choose your pickup time and pay cash on arrival.</p>
@@ -238,21 +283,43 @@
       </div>
     </div>
 
-    <!-- Category Pills Filter & Search -->
-    <div class="menu-header">
-      <div class="category-pills" id="categoryPills">
-        <button class="pill-btn active" onclick="filterCategory('all', this)">All Items</button>
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchMainTab('catalogTab', this)">🍔 Menu Catalog</button>
+      <button class="tab-btn" onclick="switchMainTab('historyTab', this)">📋 My Orders & Receipts</button>
+    </div>
+
+    <!-- Alert Message -->
+    <div id="mainAlert" class="alert alert-success"></div>
+
+    <!-- TAB 1: MENU CATALOG -->
+    <div id="catalogTab" class="tab-content active">
+      <div class="menu-header">
+        <div class="category-pills" id="categoryPills">
+          <button class="pill-btn active" onclick="filterCategory('all', this)">All Items</button>
+        </div>
+
+        <div style="position: relative; width: 250px;">
+          <input type="text" id="searchInput" class="form-control" placeholder="Search menu..." onkeyup="handleSearch()" style="padding-left: 2.4rem;">
+          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+        </div>
       </div>
 
-      <div style="position: relative; width: 250px;">
-        <input type="text" id="searchInput" class="form-control" placeholder="Search menu..." onkeyup="handleSearch()" style="padding-left: 2.4rem;">
-        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+      <div class="menu-grid" id="menuGrid">
+        <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 3rem;">Loading menu catalog...</div>
       </div>
     </div>
 
-    <!-- Menu Items Grid -->
-    <div class="menu-grid" id="menuGrid">
-      <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 3rem;">Loading menu catalog...</div>
+    <!-- TAB 2: ORDER HISTORY & RECEIPTS -->
+    <div id="historyTab" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+        <h3>Your Past & Active Orders</h3>
+        <button onclick="loadOrderHistory()" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">🔄 Refresh History</button>
+      </div>
+
+      <div id="historyList">
+        <div style="text-align: center; color: var(--text-muted); padding: 3rem;">Loading order history...</div>
+      </div>
     </div>
   </div>
 
@@ -270,7 +337,7 @@
       <!-- Cart Items List -->
       <div id="cartItemsList" style="max-height: 250px; overflow-y: auto; margin-bottom: 1.2rem;"></div>
 
-      <!-- Pickup Time Selection with Colored Clock Icon -->
+      <!-- Pickup Time Selection -->
       <div style="background: rgba(15,23,42,0.6); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
         <h4 style="margin-bottom: 0.6rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
           <span style="background: rgba(255, 107, 53, 0.15); color: var(--primary); padding: 0.3rem 0.5rem; border-radius: 8px; font-size: 1.2rem;">⏰</span>
@@ -305,16 +372,50 @@
   <div id="receiptModal" class="modal-overlay">
     <div class="modal-content">
       <div style="text-align: center; margin-bottom: 1rem;">
-        <div style="font-size: 3rem; margin-bottom: 0.3rem;">🎉</div>
-        <h2>Order Confirmed!</h2>
-        <p style="color: var(--text-muted);">Show this digital receipt at the canteen kitchen.</p>
+        <div style="font-size: 3rem; margin-bottom: 0.3rem;">📄</div>
+        <h2>Digital Pickup Receipt</h2>
+        <p style="color: var(--text-muted);">Present this receipt to kitchen staff at pickup.</p>
       </div>
 
       <div id="receiptContent" class="receipt-box"></div>
 
       <div style="text-align: center; margin-top: 1.5rem;">
-        <button onclick="closeReceiptModal()" class="btn btn-primary">Done & Back to Menu</button>
+        <button onclick="closeReceiptModal()" class="btn btn-primary">Close Receipt</button>
       </div>
+    </div>
+  </div>
+
+  <!-- RATING & REVIEW MODAL -->
+  <div id="reviewModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 style="margin-bottom: 0.5rem;">Rate & Review Meal ⭐</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem;" id="reviewItemName">Item Name</p>
+
+      <form id="reviewForm">
+        <input type="hidden" id="reviewItemId">
+
+        <div class="form-group">
+          <label>Your Rating *</label>
+          <div class="star-rating" id="starRatingPicker">
+            <span onclick="setRating(1)">★</span>
+            <span onclick="setRating(2)">★</span>
+            <span onclick="setRating(3)">★</span>
+            <span onclick="setRating(4)">★</span>
+            <span onclick="setRating(5)">★</span>
+          </div>
+          <input type="hidden" id="selectedRatingValue" value="5">
+        </div>
+
+        <div class="form-group">
+          <label for="reviewComment">Comments / Feedback</label>
+          <textarea id="reviewComment" class="form-control" rows="3" placeholder="Tell us how delicious this meal was..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" onclick="closeReviewModal()" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Review</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -342,9 +443,21 @@
 
     let userDailyLimit = 0.00;
     let userTodaySpent = 0.00;
+    let userLoyaltyPoints = 0;
     let allCategories = [];
     let allMenuItems = [];
     let activeCategory = 'all';
+
+    function switchMainTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+
+      if (tabId === 'historyTab') {
+        loadOrderHistory();
+      }
+    }
 
     async function loadInitialData() {
       await fetchLimitStatus();
@@ -361,7 +474,8 @@
         if (data.status === 'success') {
           userDailyLimit = parseFloat(data.daily_limit);
           userTodaySpent = parseFloat(data.today_spent);
-          document.getElementById('loyaltyPoints').textContent = `${data.loyalty_points} pts`;
+          userLoyaltyPoints = parseInt(data.loyalty_points) || 0;
+          document.getElementById('loyaltyPoints').textContent = `${userLoyaltyPoints} pts`;
           document.getElementById('dailyLimit').textContent = `$${userDailyLimit.toFixed(2)}`;
           document.getElementById('spentToday').textContent = `$${userTodaySpent.toFixed(2)}`;
         }
@@ -427,8 +541,14 @@
       const cart = Cart.getCart();
 
       grid.innerHTML = items.map(item => {
-        const cartItem = cart.find(i => i.item_id === item.item_id);
+        const cartItem = cart.find(i => i.item_id === item.item_id && !i.is_free_reward);
         const isAdded = !!cartItem;
+
+        const canRedeem = item.is_reward_eligible && item.points_required && userLoyaltyPoints >= item.points_required;
+        const redeemedItemInCart = cart.find(i => i.item_id === item.item_id && i.is_free_reward);
+
+        const avgRatingVal = parseFloat(item.avg_rating) || 0;
+        const ratingDisplay = avgRatingVal > 0 ? `${avgRatingVal.toFixed(1)} (${item.total_reviews})` : 'New';
 
         return `
           <div class="menu-card">
@@ -442,11 +562,22 @@
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <h3 class="card-title">${item.name}</h3>
                 <div class="rating-badge">
-                  ★ <span>${item.avg_rating > 0 ? item.avg_rating : 'New'}</span>
+                  ★ <span>${ratingDisplay}</span>
                 </div>
               </div>
 
               <p class="card-desc">${item.description || 'Freshly prepared canteen meal.'}</p>
+
+              ${item.is_reward_eligible ? `
+                <div style="margin-bottom: 0.8rem;">
+                  <button onclick='handleRedeemPoints(${JSON.stringify(item).replace(/'/g, "&apos;")})' 
+                          class="btn" 
+                          style="width: 100%; padding: 0.35rem 0.6rem; font-size: 0.8rem; background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid var(--success);"
+                          ${!canRedeem && !redeemedItemInCart ? 'disabled style="opacity:0.5;"' : ''}>
+                    ${redeemedItemInCart ? `🎁 Free Reward Added (${redeemedItemInCart.quantity})` : `🎁 Redeem with ${item.points_required} Points`}
+                  </button>
+                </div>
+              ` : ''}
 
               <div class="card-footer">
                 <div class="price-tag">$${parseFloat(item.price).toFixed(2)}</div>
@@ -466,7 +597,17 @@
     }
 
     function handleAddToCart(item) {
-      Cart.addToCart(item);
+      Cart.addToCart(item, false);
+      updateCartBadge();
+      renderMenuGrid(allMenuItems);
+    }
+
+    function handleRedeemPoints(item) {
+      if (userLoyaltyPoints < item.points_required) {
+        alert(`You need ${item.points_required} loyalty points to redeem this item. You have ${userLoyaltyPoints} points.`);
+        return;
+      }
+      Cart.addToCart(item, true);
       updateCartBadge();
       renderMenuGrid(allMenuItems);
     }
@@ -521,27 +662,43 @@
       listContainer.innerHTML = cart.map(item => `
         <div class="cart-item-row">
           <div style="flex: 1;">
-            <div style="font-weight: 600;">${item.name}</div>
-            <div style="font-size: 0.85rem; color: var(--primary); font-weight: 700;">$${item.price.toFixed(2)} each</div>
+            <div style="font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
+              ${item.name}
+              ${item.is_free_reward ? '<span class="badge badge-customer">FREE REWARD</span>' : ''}
+            </div>
+            <div style="font-size: 0.85rem; color: var(--primary); font-weight: 700;">
+              ${item.is_free_reward ? `🎁 ${item.points_required} Points Each` : `$${parseFloat(item.price).toFixed(2)} each`}
+            </div>
           </div>
 
           <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0 0.8rem;">
-            <button onclick="changeQty(${item.item_id}, -1)" class="qty-btn">-</button>
+            <button onclick="changeQty(${item.item_id}, -1, ${item.is_free_reward})" class="qty-btn">-</button>
             <span style="font-weight: 600; min-width: 20px; text-align: center;">${item.quantity}</span>
-            <button onclick="changeQty(${item.item_id}, 1)" class="qty-btn">+</button>
+            <button onclick="changeQty(${item.item_id}, 1, ${item.is_free_reward})" class="qty-btn">+</button>
           </div>
 
           <div style="font-weight: 700; min-width: 65px; text-align: right;">
-            $${(item.price * item.quantity).toFixed(2)}
+            ${item.is_free_reward ? '$0.00' : `$${(parseFloat(item.price) * item.quantity).toFixed(2)}`}
           </div>
 
-          <button onclick="removeItemFromCart(${item.item_id})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0.2rem 0.4rem; margin-left: 0.6rem;" title="Remove item">🗑️</button>
+          <button onclick="removeItemFromCart(${item.item_id}, ${item.is_free_reward})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0.2rem 0.4rem; margin-left: 0.6rem;" title="Remove item">🗑️</button>
         </div>
       `).join('');
 
       const total = Cart.getCartTotal();
+      const pointsTotal = Cart.getPointsTotal();
+
       document.getElementById('cartSubtotal').textContent = `$${total.toFixed(2)}`;
-      document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+      document.getElementById('cartTotal').textContent = pointsTotal > 0 ? `$${total.toFixed(2)} + ${pointsTotal} pts` : `$${total.toFixed(2)}`;
+
+      // Check Loyalty Points availability
+      if (pointsTotal > userLoyaltyPoints) {
+        alertContainer.innerHTML = `⚠️ <strong>Insufficient Points!</strong> You need ${pointsTotal} points to redeem free rewards, but you only have ${userLoyaltyPoints} points.`;
+        alertContainer.style.display = 'block';
+        checkoutBtn.disabled = true;
+        checkoutBtn.style.opacity = '0.5';
+        return;
+      }
 
       // Check Daily Limit
       if (userDailyLimit > 0) {
@@ -559,15 +716,15 @@
       checkoutBtn.style.opacity = '1';
     }
 
-    function changeQty(itemId, change) {
-      Cart.updateQuantity(itemId, change);
+    function changeQty(itemId, change, isFreeReward) {
+      Cart.updateQuantity(itemId, change, isFreeReward);
       updateCartBadge();
       renderCartUI();
       renderMenuGrid(allMenuItems);
     }
 
-    function removeItemFromCart(itemId) {
-      Cart.removeFromCart(itemId);
+    function removeItemFromCart(itemId, isFreeReward) {
+      Cart.removeFromCart(itemId, isFreeReward);
       updateCartBadge();
       renderCartUI();
       renderMenuGrid(allMenuItems);
@@ -589,7 +746,7 @@
           item_id: i.item_id,
           name: i.name,
           quantity: i.quantity,
-          is_free_reward: false
+          is_free_reward: !!i.is_free_reward
         }))
       };
 
@@ -611,15 +768,122 @@
           closeCartModal();
           renderMenuGrid(allMenuItems);
           await fetchLimitStatus();
-          showDigitalReceipt(data.order);
+          try {
+            showDigitalReceipt(data.order);
+          } catch (receiptErr) {
+            console.error('Receipt display error:', receiptErr);
+          }
         } else {
           const alertContainer = document.getElementById('cartLimitAlert');
           alertContainer.textContent = data.message || 'Failed to place order.';
           alertContainer.style.display = 'block';
         }
       } catch (err) {
+        console.error('Submit order error:', err);
         alert('Error placing order. Please try again.');
       }
+    }
+
+    // --- ORDER HISTORY & DIGITAL RECEIPTS ---
+    async function loadOrderHistory() {
+      const container = document.getElementById('historyList');
+      try {
+        const res = await fetch('/api/customer/orders', {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          if (data.orders.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 3rem;">You haven't placed any orders yet.</div>`;
+            return;
+          }
+
+          container.innerHTML = data.orders.map(order => {
+            const pickupFormatted = new Date(order.pickup_time).toLocaleString();
+            const isPickedUp = order.status === 'picked_up';
+
+            return `
+              <div class="history-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem;">
+                  <div>
+                    <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">Order #${order.order_id}</span>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+                      Placed: ${new Date(order.order_time).toLocaleString()}
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    <span class="badge ${getStatusBadgeClass(order.status)}">${order.status.replace('_', ' ').toUpperCase()}</span>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">
+                      Payment: <strong style="color: ${order.payment_status === 'paid' ? 'var(--success)' : 'var(--warning)'};">${(order.payment_status || 'unpaid').toUpperCase()}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="font-size: 0.9rem; color: var(--accent); margin-bottom: 0.8rem; font-weight: 600;">
+                  ⏰ Pickup Time: ${pickupFormatted}
+                </div>
+
+                <!-- Items Breakdown -->
+                <div style="margin-bottom: 1rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.8rem;">
+                  ${order.items.map(item => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 0.3rem 0;">
+                      <span>${item.quantity}x ${item.item_name} ${item.is_free_reward ? '<span style="color: var(--success); font-size: 0.75rem;">(Free Reward)</span>' : ''}</span>
+                      <div style="display: flex; align-items: center; gap: 0.8rem;">
+                        <span>$${parseFloat(item.subtotal).toFixed(2)}</span>
+                        ${isPickedUp ? `
+                          <button onclick="openReviewModalForOrder(${item.item_id}, '${item.item_name.replace(/'/g, "\\'")}')" class="btn btn-outline" style="padding: 0.25rem 0.55rem; font-size: 0.78rem; color: #facc15; border-color: #facc15;">⭐ Rate</button>
+                        ` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+
+                <!-- Footer & Action Buttons -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                  <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">
+                    Total: $${parseFloat(order.total_amount).toFixed(2)}
+                  </div>
+
+                  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button onclick='viewDigitalReceipt(${JSON.stringify(order).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">📄 Digital Receipt</button>
+                    <button onclick='reorderPreviousItems(${JSON.stringify(order.items).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--primary); color: var(--primary);">🔄 Reorder</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        container.innerHTML = `<div style="color: var(--danger); text-align: center;">Failed to load order history.</div>`;
+      }
+    }
+
+    function getStatusBadgeClass(status) {
+      if (status === 'pending') return 'badge-customer';
+      if (status === 'accepted') return 'badge-kitchen';
+      if (status === 'preparing') return 'badge-customer';
+      if (status === 'ready') return 'badge-customer';
+      if (status === 'picked_up') return 'badge-customer';
+      return 'badge-admin';
+    }
+
+    function viewDigitalReceipt(order) {
+      showDigitalReceipt(order);
+    }
+
+    function reorderPreviousItems(items) {
+      for (const item of items) {
+        Cart.addToCart({
+          item_id: item.item_id,
+          name: item.item_name,
+          price: parseFloat(item.unit_price) || 0.00,
+          photo_url: item.photo_url
+        }, !!item.is_free_reward);
+      }
+      updateCartBadge();
+      renderMenuGrid(allMenuItems);
+      openCartModal();
     }
 
     function showDigitalReceipt(order) {
@@ -629,27 +893,27 @@
       container.innerHTML = `
         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.8rem;">
           <span>Order #: <strong>#${order.order_id}</strong></span>
-          <span class="badge badge-customer">${order.status.toUpperCase()}</span>
+          <span class="badge badge-customer">${(order.status || 'pending').toUpperCase()}</span>
         </div>
 
         <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.8rem;">
           <div>Customer: <strong>${customerUser.name}</strong></div>
           <div>Pickup Time: <strong>${pickupFormatted}</strong></div>
-          <div>Payment: <strong>Cash on Pickup (Unpaid)</strong></div>
+          <div>Payment Status: <strong>${(order.payment_status || 'unpaid').toUpperCase()}</strong></div>
         </div>
 
         <div style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-bottom: 0.8rem;">
-          ${order.items.map(i => `
+          ${(order.items || []).map(i => `
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.3rem;">
-              <span>${i.quantity}x ${i.name}</span>
-              <span>$${parseFloat(i.subtotal).toFixed(2)}</span>
+              <span>${i.quantity}x ${i.item_name || i.name} ${i.is_free_reward ? '(Free Reward)' : ''}</span>
+              <span>$${parseFloat(i.subtotal || 0).toFixed(2)}</span>
             </div>
           `).join('')}
         </div>
 
         <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; border-top: 1px solid var(--border-color); padding-top: 0.6rem; color: var(--primary);">
-          <span>Total Cash Due:</span>
-          <span>$${parseFloat(order.total_amount).toFixed(2)}</span>
+          <span>Total Amount:</span>
+          <span>$${parseFloat(order.total_amount || 0).toFixed(2)}</span>
         </div>
       `;
 
@@ -660,6 +924,63 @@
       document.getElementById('receiptModal').style.display = 'none';
     }
 
+    // --- REVIEWS MODAL FUNCTIONS ---
+    let currentRatingVal = 5;
+
+    function openReviewModalForOrder(itemId, itemName) {
+      document.getElementById('reviewItemId').value = itemId;
+      document.getElementById('reviewItemName').textContent = `Rating: ${itemName}`;
+      document.getElementById('reviewComment').value = '';
+      setRating(5);
+      document.getElementById('reviewModal').style.display = 'flex';
+    }
+
+    function closeReviewModal() {
+      document.getElementById('reviewModal').style.display = 'none';
+    }
+
+    function setRating(rating) {
+      currentRatingVal = rating;
+      document.getElementById('selectedRatingValue').value = rating;
+      const stars = document.querySelectorAll('#starRatingPicker span');
+      stars.forEach((star, index) => {
+        if (index < rating) star.classList.add('active');
+        else star.classList.remove('active');
+      });
+    }
+
+    document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const itemId = document.getElementById('reviewItemId').value;
+      const rating = document.getElementById('selectedRatingValue').value;
+      const comment = document.getElementById('reviewComment').value;
+
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: JSON.stringify({ item_id: itemId, rating, comment })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          alert(data.message);
+          closeReviewModal();
+          await fetchMenuItems();
+          if (document.getElementById('historyTab').classList.contains('active')) {
+            loadOrderHistory();
+          }
+        } else {
+          alert(data.message || 'Failed to submit review.');
+        }
+      } catch (err) {
+        alert('Failed to submit review.');
+      }
+    });
+
     async function viewItemDetails(itemId) {
       try {
         const res = await fetch(`/api/menu/${itemId}`);
@@ -667,6 +988,7 @@
         if (data.status === 'success') {
           const item = data.item;
           const reviews = data.reviews || [];
+          const avgRatingVal = parseFloat(item.avg_rating) || 0;
 
           document.getElementById('modalItemDetails').innerHTML = `
             <img src="${item.photo_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem;">
@@ -676,17 +998,17 @@
             
             <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
               <span>⏱️ Prep Time: <strong>${item.wait_time_minutes} mins</strong></span>
-              <span>⭐ Rating: <strong>${item.avg_rating > 0 ? item.avg_rating + ' / 5' : 'No ratings yet'}</strong></span>
+              <span>⭐ Average Rating: <strong>${avgRatingVal > 0 ? avgRatingVal.toFixed(1) + ' / 5' : 'No ratings yet'} (${reviews.length} reviews)</strong></span>
             </div>
 
-            <h3 style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-bottom: 0.8rem;">Customer Reviews (${reviews.length})</h3>
+            <h3 style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-bottom: 0.8rem;">All Customer Reviews (${reviews.length})</h3>
             <div style="max-height: 200px; overflow-y: auto;">
               ${reviews.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.9rem;">No customer reviews yet.</p>' : 
                 reviews.map(r => `
                   <div style="background: rgba(15,23,42,0.6); padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--border-color);">
                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;">
                       <strong>${r.user_name}</strong>
-                      <span style="color: #facc15;">${'★'.repeat(r.rating)}</span>
+                      <span style="color: #facc15;">${'★'.repeat(r.rating)} (${r.rating}/5)</span>
                     </div>
                     <p style="font-size: 0.85rem; color: var(--text-muted);">${r.comment || ''}</p>
                   </div>

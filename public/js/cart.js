@@ -15,9 +15,9 @@ const Cart = {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
   },
 
-  addToCart(item) {
+  addToCart(item, isFreeReward = false) {
     const cart = this.getCart();
-    const existing = cart.find(i => i.item_id === item.item_id && !i.is_free_reward);
+    const existing = cart.find(i => i.item_id === item.item_id && i.is_free_reward === isFreeReward);
 
     if (existing) {
       existing.quantity += 1;
@@ -28,7 +28,8 @@ const Cart = {
         price: parseFloat(item.price),
         photo_url: item.photo_url,
         quantity: 1,
-        is_free_reward: false
+        is_free_reward: isFreeReward,
+        points_required: item.points_required || null
       });
     }
 
@@ -36,9 +37,9 @@ const Cart = {
     return cart;
   },
 
-  updateQuantity(itemId, change) {
+  updateQuantity(itemId, change, isFreeReward = false) {
     let cart = this.getCart();
-    const index = cart.findIndex(i => i.item_id === itemId);
+    const index = cart.findIndex(i => i.item_id === itemId && i.is_free_reward === isFreeReward);
 
     if (index !== -1) {
       cart[index].quantity += change;
@@ -51,9 +52,9 @@ const Cart = {
     return cart;
   },
 
-  removeFromCart(itemId) {
+  removeFromCart(itemId, isFreeReward = false) {
     let cart = this.getCart();
-    cart = cart.filter(i => i.item_id !== itemId);
+    cart = cart.filter(i => !(i.item_id === itemId && i.is_free_reward === isFreeReward));
     this.saveCart(cart);
     return cart;
   },
@@ -71,5 +72,14 @@ const Cart = {
       const price = item.is_free_reward ? 0.00 : parseFloat(item.price);
       return sum + (price * item.quantity);
     }, 0.00);
+  },
+
+  getPointsTotal() {
+    return this.getCart().reduce((sum, item) => {
+      if (item.is_free_reward && item.points_required) {
+        return sum + (parseInt(item.points_required) * item.quantity);
+      }
+      return sum;
+    }, 0);
   }
 };
