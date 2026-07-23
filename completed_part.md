@@ -18,30 +18,32 @@
 - Automated cash payment marking and customer loyalty points awarding (+1 pt) on pickup.
 - Kitchen Portal (`public/kitchen.html`) with **3-Second Auto-Polling**.
 
+## Phase 6: Customer Loyalty, History & Ratings [COMPLETED]
+- Customer order history (`routes/customer.js`), digital receipt viewer, 1-click reordering, loyalty points redemption, review submission (`routes/reviews.js`), multi-review storage, and calculated average ratings.
+
 ---
 
-## Phase 6: Customer Loyalty, History & Ratings [COMPLETED]
+## Phase 7: Admin Dashboard & Sales Analytics [COMPLETED]
 
 ### Completed Tasks
-1. **Customer Order History & Digital Receipts APIs (`routes/customer.js`)**:
-   - `GET /api/customer/orders`: Returns customer's past and active orders sorted by `order_id DESC` with item breakdown, status, payment state, and completion timestamps.
-   - `GET /api/customer/orders/:id/receipt`: Fetches digital receipt details for any order.
+1. **Sales Analytics & Reports API (`routes/admin.js`)**:
+   - `GET /api/admin/analytics`: Aggregates business performance metrics filterable by date range (`start_date`, `end_date`):
+     - **Total Paid Sales Revenue ($)**: Total revenue from completed `picked_up` paid orders.
+     - **Picked Up & Total Orders Count**: Volume metrics for order fulfillment.
+     - **Best-Selling Menu Items Report**: Top items by total units sold and revenue generated.
+     - **Peak Order Hours Analysis**: Hour of day with the highest order volume.
+     - **Recent Activity Log**: Real-time log of recent orders.
 
-2. **Loyalty Points Redemption (`routes/orders.js` & `public/js/cart.js`)**:
-   - Allows customers to redeem reward-eligible items (`is_reward_eligible = TRUE`) using their accumulated loyalty points.
-   - Validates user loyalty points balance and deducts points in MySQL transaction upon checkout.
+2. **User & Staff Account Management API (`routes/admin.js`)**:
+   - `GET /api/admin/users`: List all system users with role badges, daily limits, and loyalty balances.
+   - `POST /api/admin/users`: Endpoint for administrators to create new `kitchen` or `admin` staff accounts with hashed passwords.
+   - `PUT /api/admin/users/:id`: Endpoint to update user roles, names, and customer Daily Spending Limits.
 
-3. **Ratings & Reviews API (`routes/reviews.js`)**:
-   - `POST /api/reviews`: Submits 1-5 star ratings and text comments for menu items.
-   - **Enforces Purchase Rule:** Validates that the customer has actually purchased and picked up (`picked_up`) the dish before allowing a review.
-
-4. **Customer UI Features (`public/index.html`)**:
-   - **Order History Tab (`📋 My Orders & Receipts`)**: List of past orders with real-time status tracking badges.
-   - **Digital Receipt Viewer**: Customers can open their digital receipt for any order at any time to present to kitchen staff.
-   - **1-Click Reorder**: Re-adds all items from a previous order into the cart.
-   - **Interactive Star Rating Picker**: Modal interface for rating purchased dishes.
+3. **Interactive Admin Portal UI (`public/admin.html`)**:
+   - **Sales Analytics Tab**: Top stat metric cards (Total Sales, Picked Up Orders, Total Placed Orders), date range filtering inputs, best-sellers table, peak order hours table, and recent activity log.
+   - **User Management Tab**: Table listing all accounts with full edit capabilities and modal to create new staff accounts.
 
 ---
 
 ## Next Steps (Awaiting User Permission)
-- **Phase 7:** Admin Dashboard & Sales Analytics (Admin user management, sales aggregate metrics, best-selling items report, peak order hours analysis, filterable date ranges).
+- **Phase 8:** Testing & Refinement (End-to-end rule verification, daily limit boundary checks, valid status transition enforcement, cash collection & point reward verification).

@@ -11,6 +11,7 @@
       gap: 1rem;
       border-bottom: 1px solid var(--border-color);
       margin-bottom: 1.5rem;
+      flex-wrap: wrap;
     }
     .tab-btn {
       padding: 0.8rem 1.5rem;
@@ -80,6 +81,27 @@
       max-height: 90vh;
       overflow-y: auto;
     }
+    .stat-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+    .stat-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -94,21 +116,113 @@
 
   <div class="container">
     <div style="margin-bottom: 1.5rem;">
-      <h1 style="font-size: 2rem;">Canteen Management</h1>
-      <p style="color: var(--text-muted);">Manage menu catalog, categories, prices, and preparation times.</p>
+      <h1 style="font-size: 2rem;">Administrator Dashboard</h1>
+      <p style="color: var(--text-muted);">Analytics reports, menu catalog management, and user accounts.</p>
     </div>
 
     <!-- Tabs Navigation -->
     <div class="admin-tabs">
-      <button class="tab-btn active" onclick="switchTab('menuTab', this)">🍔 Menu Items</button>
+      <button class="tab-btn active" onclick="switchTab('analyticsTab', this)">📊 Sales Analytics</button>
+      <button class="tab-btn" onclick="switchTab('menuTab', this)">🍔 Menu Catalog</button>
       <button class="tab-btn" onclick="switchTab('categoryTab', this)">📁 Categories</button>
+      <button class="tab-btn" onclick="switchTab('usersTab', this)">👥 User Management</button>
     </div>
 
     <!-- Alert Box -->
     <div id="adminAlert" class="alert alert-success"></div>
 
-    <!-- TAB 1: Menu Items Management -->
-    <div id="menuTab" class="tab-content active">
+    <!-- TAB 1: SALES ANALYTICS & METRICS -->
+    <div id="analyticsTab" class="tab-content active">
+      <!-- Date Range Filter Bar -->
+      <div style="background: rgba(15,23,42,0.6); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Start Date</label>
+            <input type="date" id="startDateFilter" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; color-scheme: dark;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">End Date</label>
+            <input type="date" id="endDateFilter" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; color-scheme: dark;">
+          </div>
+          <button onclick="loadAnalyticsData()" class="btn btn-primary" style="margin-top: 1rem; padding: 0.5rem 1rem;">Filter Reports</button>
+          <button onclick="resetAnalyticsFilter()" class="btn btn-outline" style="margin-top: 1rem; padding: 0.5rem 1rem;">Reset</button>
+        </div>
+      </div>
+
+      <!-- Stat Metric Cards -->
+      <div class="stat-cards-grid">
+        <div class="stat-card">
+          <div class="stat-title">💰 Total Paid Sales Revenue</div>
+          <div class="stat-value" style="color: var(--success);" id="totalSalesVal">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">✅ Picked-Up Orders</div>
+          <div class="stat-value" style="color: var(--primary);" id="pickedUpVal">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">📦 Total Orders Placed</div>
+          <div class="stat-value" style="color: var(--accent);" id="totalOrdersVal">0</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Best Selling Items Table -->
+        <div>
+          <h3>🔥 Best-Selling Menu Items</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Units Sold</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody id="bestSellersTableBody">
+              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading best sellers...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Peak Order Hours Table -->
+        <div>
+          <h3>⏰ Peak Order Hours</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Hour Window</th>
+                <th>Orders Count</th>
+                <th>Total Volume</th>
+              </tr>
+            </thead>
+            <tbody id="peakHoursTableBody">
+              <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading peak hours...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Orders Log -->
+      <h3>📜 Recent Orders Log</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Placed Time</th>
+            <th>Pickup Time</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="recentOrdersTableBody">
+          <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading recent orders...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 2: MENU CATALOG MANAGEMENT -->
+    <div id="menuTab" class="tab-content">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3>All Menu Items</h3>
         <button onclick="openMenuModal()" class="btn btn-primary">+ Add New Item</button>
@@ -133,7 +247,7 @@
       </table>
     </div>
 
-    <!-- TAB 2: Categories Management -->
+    <!-- TAB 3: CATEGORIES MANAGEMENT -->
     <div id="categoryTab" class="tab-content">
       <div style="max-width: 600px; margin-bottom: 2rem;">
         <h3 style="margin-bottom: 1rem;">Add New Category</h3>
@@ -157,9 +271,34 @@
         </tbody>
       </table>
     </div>
+
+    <!-- TAB 4: USER MANAGEMENT -->
+    <div id="usersTab" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>System Users & Staff Accounts</h3>
+        <button onclick="openUserModal()" class="btn btn-primary">+ Create Staff Account</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Daily Spending Limit</th>
+            <th>Loyalty Points</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading users...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- MENU ITEM MODAL (Add / Edit) -->
+  <!-- MENU ITEM MODAL -->
   <div id="menuModal" class="modal-overlay">
     <div class="modal-content">
       <h2 id="modalTitle" style="margin-bottom: 1.5rem;">Add Menu Item</h2>
@@ -220,6 +359,52 @@
     </div>
   </div>
 
+  <!-- USER MODAL (Create / Edit Staff) -->
+  <div id="userModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="userModalTitle" style="margin-bottom: 1.5rem;">Create Staff Account</h2>
+      <form id="userForm">
+        <input type="hidden" id="editUserId">
+
+        <div class="form-group">
+          <label for="userFormName">Full Name *</label>
+          <input type="text" id="userFormName" class="form-control" required placeholder="Staff Member Name">
+        </div>
+
+        <div class="form-group" id="emailGroup">
+          <label for="userFormEmail">Email Address *</label>
+          <input type="email" id="userFormEmail" class="form-control" required placeholder="staff@campuseats.com">
+        </div>
+
+        <div class="form-group" id="passwordGroup">
+          <label for="userFormPassword">Password *</label>
+          <input type="password" id="userFormPassword" class="form-control" placeholder="••••••••">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label for="userFormRole">Account Role *</label>
+            <select id="userFormRole" class="form-control" required>
+              <option value="kitchen">Kitchen Staff</option>
+              <option value="admin">Administrator</option>
+              <option value="customer">Customer</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="userFormLimit">Daily Limit ($)</label>
+            <input type="number" id="userFormLimit" class="form-control" step="0.50" min="0" value="0.00">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" onclick="closeUserModal()" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <footer>
     <p>&copy; 2026 CampusEats Canteen Application. All rights reserved.</p>
   </footer>
@@ -233,12 +418,16 @@
 
     let globalCategories = [];
     let globalMenuItems = [];
+    let globalUsers = [];
 
     function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       btn.classList.add('active');
+
+      if (tabId === 'analyticsTab') loadAnalyticsData();
+      if (tabId === 'usersTab') loadUsers();
     }
 
     function showAlert(msg, isSuccess = true) {
@@ -248,6 +437,207 @@
       alert.style.display = 'block';
       setTimeout(() => alert.style.display = 'none', 4000);
     }
+
+    // --- ANALYTICS FUNCTIONS ---
+    async function loadAnalyticsData() {
+      const start = document.getElementById('startDateFilter').value;
+      const end = document.getElementById('endDateFilter').value;
+
+      let url = '/api/admin/analytics';
+      const params = [];
+      if (start) params.push(`start_date=${start}`);
+      if (end) params.push(`end_date=${end}`);
+      if (params.length > 0) url += '?' + params.join('&');
+
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          const a = data.analytics;
+          document.getElementById('totalSalesVal').textContent = `$${a.total_sales.toFixed(2)}`;
+          document.getElementById('pickedUpVal').textContent = a.picked_up_count;
+          document.getElementById('totalOrdersVal').textContent = a.total_orders;
+
+          renderBestSellersTable(a.best_sellers);
+          renderPeakHoursTable(a.peak_hours);
+          renderRecentOrdersTable(a.recent_orders);
+        }
+      } catch (err) { console.error('Analytics load error:', err); }
+    }
+
+    function resetAnalyticsFilter() {
+      document.getElementById('startDateFilter').value = '';
+      document.getElementById('endDateFilter').value = '';
+      loadAnalyticsData();
+    }
+
+    function renderBestSellersTable(items) {
+      const tbody = document.getElementById('bestSellersTableBody');
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No completed sales yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = items.map(i => `
+        <tr>
+          <td style="font-weight: 600;">${i.item_name}</td>
+          <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-main);">${i.category_name || 'General'}</span></td>
+          <td style="font-weight: 700; color: var(--primary);">${i.total_quantity} units</td>
+          <td style="color: var(--success); font-weight: 700;">$${parseFloat(i.total_revenue).toFixed(2)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderPeakHoursTable(hours) {
+      const tbody = document.getElementById('peakHoursTableBody');
+      if (hours.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No order volume recorded.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = hours.map(h => `
+        <tr>
+          <td style="font-weight: 600; color: var(--accent);">⏰ ${h.formatted_hour}</td>
+          <td style="font-weight: 700;">${h.order_count} order(s)</td>
+          <td style="color: var(--primary); font-weight: 700;">$${parseFloat(h.total_sales).toFixed(2)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRecentOrdersTable(orders) {
+      const tbody = document.getElementById('recentOrdersTableBody');
+      if (orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No recent orders.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td style="font-weight: 700; color: var(--primary);">#${o.order_id}</td>
+          <td style="font-weight: 600;">${o.customer_name}</td>
+          <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(o.order_time).toLocaleString()}</td>
+          <td style="font-size: 0.85rem; color: var(--accent);">${new Date(o.pickup_time).toLocaleString()}</td>
+          <td style="font-weight: 700;">$${parseFloat(o.total_amount).toFixed(2)}</td>
+          <td><span class="badge badge-customer">${o.status.toUpperCase()}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // --- USER MANAGEMENT FUNCTIONS ---
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/admin/users', {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          globalUsers = data.users;
+          renderUsersTable();
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById('usersTableBody');
+      if (globalUsers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No users found.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = globalUsers.map(u => `
+        <tr>
+          <td>${u.user_id}</td>
+          <td style="font-weight: 600;">${u.name}</td>
+          <td>${u.email}</td>
+          <td><span class="badge badge-${u.role}">${u.role.toUpperCase()}</span></td>
+          <td style="font-weight: 700; color: var(--success);">$${parseFloat(u.daily_limit).toFixed(2)}</td>
+          <td style="color: var(--primary); font-weight: 700;">${u.loyalty_points} pts</td>
+          <td>
+            <button onclick='editUser(${JSON.stringify(u).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openUserModal(user = null) {
+      document.getElementById('userForm').reset();
+      document.getElementById('editUserId').value = '';
+
+      if (user) {
+        document.getElementById('userModalTitle').textContent = 'Edit User Account';
+        document.getElementById('editUserId').value = user.user_id;
+        document.getElementById('userFormName').value = user.name;
+        document.getElementById('userFormEmail').value = user.email;
+        document.getElementById('userFormEmail').disabled = true;
+        document.getElementById('userFormRole').value = user.role;
+        document.getElementById('userFormLimit').value = user.daily_limit;
+        document.getElementById('passwordGroup').style.display = 'none';
+        document.getElementById('userFormPassword').required = false;
+      } else {
+        document.getElementById('userModalTitle').textContent = 'Create Staff / Admin Account';
+        document.getElementById('userFormEmail').disabled = false;
+        document.getElementById('passwordGroup').style.display = 'block';
+        document.getElementById('userFormPassword').required = true;
+      }
+
+      document.getElementById('userModal').style.display = 'flex';
+    }
+
+    function editUser(user) {
+      openUserModal(user);
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').style.display = 'none';
+    }
+
+    document.getElementById('userForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('editUserId').value;
+      const name = document.getElementById('userFormName').value.trim();
+      const role = document.getElementById('userFormRole').value;
+      const daily_limit = document.getElementById('userFormLimit').value;
+
+      if (userId) {
+        // Edit User
+        try {
+          const res = await fetch(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Auth.getToken()}`
+            },
+            body: JSON.stringify({ name, role, daily_limit })
+          });
+          const data = await res.json();
+          if (data.status === 'success') {
+            showAlert('User updated successfully!');
+            closeUserModal();
+            loadUsers();
+          } else { alert(data.message); }
+        } catch (err) { alert('Failed to update user.'); }
+      } else {
+        // Create New User
+        const email = document.getElementById('userFormEmail').value.trim();
+        const password = document.getElementById('userFormPassword').value;
+
+        try {
+          const res = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Auth.getToken()}`
+            },
+            body: JSON.stringify({ name, email, password, role, daily_limit })
+          });
+          const data = await res.json();
+          if (data.status === 'success') {
+            showAlert('Staff account created!');
+            closeUserModal();
+            loadUsers();
+          } else { alert(data.message); }
+        } catch (err) { alert('Failed to create account.'); }
+      }
+    });
 
     // --- CATEGORY FUNCTIONS ---
     async function loadCategories() {
@@ -478,7 +868,8 @@
       } catch (err) { showAlert('Failed to delete menu item.', false); }
     }
 
-    // Initial load
+    // Initial loads
+    loadAnalyticsData();
     loadCategories();
     loadMenuItems();
   </script>
