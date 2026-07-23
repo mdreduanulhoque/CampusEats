@@ -3,13 +3,158 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Dashboard - CampusEats</title>
+  <title>CampusEats - Campus Canteen Pre-order</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .category-pills {
+      display: flex;
+      gap: 0.6rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+    .pill-btn {
+      padding: 0.5rem 1.2rem;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .pill-btn:hover, .pill-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .menu-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .menu-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+      border-color: rgba(255, 107, 53, 0.4);
+    }
+    .card-img-wrapper {
+      position: relative;
+      height: 180px;
+      overflow: hidden;
+    }
+    .card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .prep-tag {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .card-body {
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.4;
+      margin-bottom: 1rem;
+      flex: 1;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .price-tag {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .rating-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      color: #facc15;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
     <a href="/" class="brand">🍔 CampusEats</a>
-    <ul class="nav-links">
+    <ul class="nav-links" id="navAuthSection">
       <li><span id="userRoleBadge" class="badge badge-customer">Customer</span></li>
       <li><span id="userName" style="font-weight: 600;"></span></li>
       <li><button onclick="Auth.logout()" class="btn btn-outline" style="padding: 0.4rem 0.9rem;">Logout</button></li>
@@ -17,27 +162,51 @@
   </nav>
 
   <div class="container">
-    <div style="background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem;">
-      <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Hello, <span id="userGreeting">Customer</span>! 👋</h1>
-      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Pre-order your favorite canteen meals and track your orders in real-time.</p>
-      
-      <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 1.2rem 1.8rem; border-radius: 12px; border: 1px solid var(--border-color); flex: 1; min-width: 200px;">
-          <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem;">Loyalty Points Balance</div>
-          <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);" id="loyaltyPoints">0 pts</div>
+    <!-- User Banner -->
+    <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 1.8rem 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+      <div>
+        <h1 style="font-size: 1.8rem; margin-bottom: 0.4rem;">Delicious Campus Food, Pre-ordered! 🍽️</h1>
+        <p style="color: var(--text-muted);">Choose your favorite meal, pick up on time, and pay cash on arrival.</p>
+      </div>
+
+      <div style="display: flex; gap: 1rem;">
+        <div style="background: rgba(255, 107, 53, 0.1); padding: 0.8rem 1.2rem; border-radius: 10px; border: 1px solid rgba(255, 107, 53, 0.3);">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Loyalty Points</div>
+          <div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);" id="loyaltyPoints">0 pts</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 1.2rem 1.8rem; border-radius: 12px; border: 1px solid var(--border-color); flex: 1; min-width: 200px;">
-          <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem;">Daily Spending Limit</div>
-          <div style="font-size: 1.8rem; font-weight: 700; color: var(--success);" id="dailyLimit">$0.00</div>
+        <div style="background: rgba(16, 185, 129, 0.1); padding: 0.8rem 1.2rem; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Daily Limit</div>
+          <div style="font-size: 1.3rem; font-weight: 700; color: var(--success);" id="dailyLimit">$0.00</div>
         </div>
       </div>
     </div>
 
-    <!-- Phase 3/4 Placeholder Banner -->
-    <div style="border: 2px dashed var(--border-color); padding: 3rem; text-align: center; border-radius: 16px; color: var(--text-muted);">
-      <h3 style="margin-bottom: 0.8rem; color: var(--text-main);">🛒 Menu Catalog & Cart System</h3>
-      <p>Authentication System (Phase 2) is active and verified! Menu catalog browsing and cart ordering will be enabled in Phase 3 & Phase 4.</p>
+    <!-- Category Pills Filter & Search -->
+    <div class="menu-header">
+      <div class="category-pills" id="categoryPills">
+        <button class="pill-btn active" onclick="filterCategory('all', this)">All Items</button>
+      </div>
+
+      <div style="position: relative; width: 250px;">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search menu..." onkeyup="handleSearch()" style="padding-left: 2.4rem;">
+        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+      </div>
+    </div>
+
+    <!-- Menu Items Grid -->
+    <div class="menu-grid" id="menuGrid">
+      <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 3rem;">Loading menu catalog...</div>
+    </div>
+  </div>
+
+  <!-- ITEM DETAIL & REVIEWS MODAL -->
+  <div id="itemModal" class="modal-overlay">
+    <div class="modal-content">
+      <div id="modalItemDetails"></div>
+      <div style="margin-top: 1.5rem; text-align: right;">
+        <button onclick="closeItemModal()" class="btn btn-outline">Close</button>
+      </div>
     </div>
   </div>
 
@@ -47,12 +216,11 @@
 
   <script src="/js/auth.js"></script>
   <script>
-    const user = Auth.checkAccess('customer');
-    if (user) {
-      document.getElementById('userName').textContent = user.name;
-      document.getElementById('userGreeting').textContent = user.name;
-      
-      // Fetch fresh profile from API
+    const customerUser = Auth.checkAccess('customer');
+    if (customerUser) {
+      document.getElementById('userName').textContent = customerUser.name;
+
+      // Fetch fresh profile
       fetch('/api/auth/me', {
         headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
       })
@@ -62,9 +230,151 @@
           document.getElementById('loyaltyPoints').textContent = `${data.user.loyalty_points} pts`;
           document.getElementById('dailyLimit').textContent = `$${parseFloat(data.user.daily_limit).toFixed(2)}`;
         }
-      })
-      .catch(err => console.error(err));
+      });
     }
+
+    let allCategories = [];
+    let allMenuItems = [];
+    let activeCategory = 'all';
+
+    async function loadCatalogData() {
+      try {
+        // Fetch Categories
+        const catRes = await fetch('/api/menu/categories');
+        const catData = await catRes.json();
+        if (catData.status === 'success') {
+          allCategories = catData.categories;
+          renderCategoryPills();
+        }
+
+        // Fetch Menu Items
+        await fetchMenuItems();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderCategoryPills() {
+      const container = document.getElementById('categoryPills');
+      container.innerHTML = `
+        <button class="pill-btn ${activeCategory === 'all' ? 'active' : ''}" onclick="filterCategory('all', this)">All Items</button>
+      ` + allCategories.map(c => `
+        <button class="pill-btn ${activeCategory == c.category_id ? 'active' : ''}" onclick="filterCategory(${c.category_id}, this)">${c.name}</button>
+      `).join('');
+    }
+
+    async function fetchMenuItems(catId = 'all') {
+      try {
+        const url = catId !== 'all' ? `/api/menu?category_id=${catId}` : '/api/menu';
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status === 'success') {
+          allMenuItems = data.items;
+          renderMenuGrid(allMenuItems);
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    function filterCategory(catId, btn) {
+      activeCategory = catId;
+      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      fetchMenuItems(catId);
+    }
+
+    function handleSearch() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const filtered = allMenuItems.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        (item.description && item.description.toLowerCase().includes(query))
+      );
+      renderMenuGrid(filtered);
+    }
+
+    function renderMenuGrid(items) {
+      const grid = document.getElementById('menuGrid');
+      if (items.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">No menu items found.</div>`;
+        return;
+      }
+
+      grid.innerHTML = items.map(item => `
+        <div class="menu-card">
+          <div class="card-img-wrapper">
+            <img src="${item.photo_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'}" class="card-img" alt="${item.name}">
+            <div class="card-tag">${item.category_name || 'Menu'}</div>
+            <div class="prep-tag">⏱️ ${item.wait_time_minutes} mins prep</div>
+          </div>
+
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h3 class="card-title">${item.name}</h3>
+              <div class="rating-badge">
+                ★ <span>${item.avg_rating > 0 ? item.avg_rating : 'New'}</span>
+              </div>
+            </div>
+
+            <p class="card-desc">${item.description || 'Delicious meal freshly prepared by our campus canteen kitchen.'}</p>
+
+            ${item.is_reward_eligible ? `
+              <div style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.8rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px; margin-bottom: 0.8rem; display: inline-block;">
+                🎁 Free with ${item.points_required} Loyalty Points
+              </div>
+            ` : ''}
+
+            <div class="card-footer">
+              <div class="price-tag">$${parseFloat(item.price).toFixed(2)}</div>
+              <button onclick="viewItemDetails(${item.item_id})" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">View & Reviews</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function viewItemDetails(itemId) {
+      try {
+        const res = await fetch(`/api/menu/${itemId}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          const item = data.item;
+          const reviews = data.reviews || [];
+
+          document.getElementById('modalItemDetails').innerHTML = `
+            <img src="${item.photo_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem;">
+            <h2>${item.name}</h2>
+            <div style="color: var(--primary); font-size: 1.4rem; font-weight: 700; margin: 0.3rem 0;">$${parseFloat(item.price).toFixed(2)}</div>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">${item.description || 'No description available.'}</p>
+            
+            <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+              <span>⏱️ Prep Time: <strong>${item.wait_time_minutes} mins</strong></span>
+              <span>⭐ Rating: <strong>${item.avg_rating > 0 ? item.avg_rating + ' / 5' : 'No ratings yet'}</strong></span>
+            </div>
+
+            <h3 style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-bottom: 0.8rem;">Customer Reviews (${reviews.length})</h3>
+            <div style="max-height: 200px; overflow-y: auto;">
+              ${reviews.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.9rem;">No customer reviews yet.</p>' : 
+                reviews.map(r => `
+                  <div style="background: rgba(15,23,42,0.6); padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;">
+                      <strong>${r.user_name}</strong>
+                      <span style="color: #facc15;">${'★'.repeat(r.rating)}</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">${r.comment || ''}</p>
+                  </div>
+                `).join('')
+              }
+            </div>
+          `;
+          document.getElementById('itemModal').style.display = 'flex';
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    function closeItemModal() {
+      document.getElementById('itemModal').style.display = 'none';
+    }
+
+    loadCatalogData();
   </script>
 </body>
 </html>

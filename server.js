@@ -5,7 +5,10 @@ require('dotenv').config();
 
 const db = require('./config/db');
 const seedDefaultUsers = require('./config/seed');
+
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const menuRoutes = require('./routes/menu');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,6 +20,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/menu', menuRoutes);
 
 // Serve static frontend files from 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));

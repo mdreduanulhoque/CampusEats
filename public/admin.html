@@ -5,10 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - CampusEats</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin-tabs {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      padding: 0.8rem 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: var(--bg-card);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+    .data-table th, .data-table td {
+      padding: 0.9rem 1.2rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .data-table th {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+    .item-img-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 550px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
-    <a href="/admin" class="brand">⚙️ Admin Dashboard</a>
+    <a href="/admin" class="brand">⚙️ CampusEats Admin</a>
     <ul class="nav-links">
       <li><span class="badge badge-admin">Administrator</span></li>
       <li><span id="userName" style="font-weight: 600;"></span></li>
@@ -17,15 +93,130 @@
   </nav>
 
   <div class="container">
-    <div style="background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem;">
-      <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Canteen Management & Sales Analytics 📊</h1>
-      <p style="color: var(--text-muted);">Manage menu items, categories, staff accounts, and view sales performance metrics.</p>
+    <div style="margin-bottom: 1.5rem;">
+      <h1 style="font-size: 2rem;">Canteen Management</h1>
+      <p style="color: var(--text-muted);">Manage menu catalog, categories, prices, and preparation times.</p>
     </div>
 
-    <!-- Phase 3 / Phase 7 Placeholder Banner -->
-    <div style="border: 2px dashed var(--border-color); padding: 3rem; text-align: center; border-radius: 16px; color: var(--text-muted);">
-      <h3 style="margin-bottom: 0.8rem; color: var(--text-main);">📈 Admin Management & Sales Metrics</h3>
-      <p>Role authorization verified for Administrator! Category/Menu CRUD will be enabled in Phase 3 and Sales Analytics in Phase 7.</p>
+    <!-- Tabs Navigation -->
+    <div class="admin-tabs">
+      <button class="tab-btn active" onclick="switchTab('menuTab', this)">🍔 Menu Items</button>
+      <button class="tab-btn" onclick="switchTab('categoryTab', this)">📁 Categories</button>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="adminAlert" class="alert alert-success"></div>
+
+    <!-- TAB 1: Menu Items Management -->
+    <div id="menuTab" class="tab-content active">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>All Menu Items</h3>
+        <button onclick="openMenuModal()" class="btn btn-primary">+ Add New Item</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Prep Time</th>
+            <th>Reward Item</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="menuTableBody">
+          <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading menu items...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 2: Categories Management -->
+    <div id="categoryTab" class="tab-content">
+      <div style="max-width: 600px; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem;">Add New Category</h3>
+        <form id="addCategoryForm" style="display: flex; gap: 1rem;">
+          <input type="text" id="categoryNameInput" class="form-control" placeholder="e.g. Snacks & Drinks" required>
+          <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Add Category</button>
+        </form>
+      </div>
+
+      <h3>Existing Categories</h3>
+      <table class="data-table" style="max-width: 600px;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category Name</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="categoryTableBody">
+          <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading categories...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MENU ITEM MODAL (Add / Edit) -->
+  <div id="menuModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="modalTitle" style="margin-bottom: 1.5rem;">Add Menu Item</h2>
+      <form id="menuItemForm">
+        <input type="hidden" id="editItemId">
+
+        <div class="form-group">
+          <label for="itemName">Item Name *</label>
+          <input type="text" id="itemName" class="form-control" required placeholder="e.g. Chicken Rice">
+        </div>
+
+        <div class="form-group">
+          <label for="itemCategory">Category</label>
+          <select id="itemCategory" class="form-control">
+            <option value="">-- Select Category --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="itemDescription">Description</label>
+          <textarea id="itemDescription" class="form-control" rows="2" placeholder="Brief item description..."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label for="itemPrice">Price ($) *</label>
+            <input type="number" id="itemPrice" class="form-control" step="0.25" min="0" required placeholder="7.50">
+          </div>
+
+          <div class="form-group">
+            <label for="itemWaitTime">Prep Time (mins)</label>
+            <input type="number" id="itemWaitTime" class="form-control" min="1" value="15">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="itemPhoto">Photo URL</label>
+          <input type="url" id="itemPhoto" class="form-control" placeholder="https://images.unsplash.com/...">
+        </div>
+
+        <div style="background: rgba(15,23,42,0.6); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 500;">
+            <input type="checkbox" id="isRewardEligible" onchange="toggleRewardPointsInput()">
+            Can be redeemed with Loyalty Points
+          </label>
+          
+          <div id="pointsInputGroup" style="display: none; margin-top: 0.8rem;">
+            <label for="pointsRequired" style="font-size: 0.85rem;">Points Required for Free Redemption</label>
+            <input type="number" id="pointsRequired" class="form-control" min="1" placeholder="3">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" onclick="closeMenuModal()" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Menu Item</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -35,10 +226,261 @@
 
   <script src="/js/auth.js"></script>
   <script>
-    const user = Auth.checkAccess('admin');
-    if (user) {
-      document.getElementById('userName').textContent = user.name;
+    const adminUser = Auth.checkAccess('admin');
+    if (adminUser) {
+      document.getElementById('userName').textContent = adminUser.name;
     }
+
+    let globalCategories = [];
+    let globalMenuItems = [];
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function showAlert(msg, isSuccess = true) {
+      const alert = document.getElementById('adminAlert');
+      alert.className = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+      alert.textContent = msg;
+      alert.style.display = 'block';
+      setTimeout(() => alert.style.display = 'none', 4000);
+    }
+
+    // --- CATEGORY FUNCTIONS ---
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/admin/categories', {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          globalCategories = data.categories;
+          renderCategoryTable();
+          updateCategoryDropdown();
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    function renderCategoryTable() {
+      const tbody = document.getElementById('categoryTableBody');
+      if (globalCategories.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No categories found.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = globalCategories.map(c => `
+        <tr>
+          <td>${c.category_id}</td>
+          <td style="font-weight: 600;">${c.name}</td>
+          <td>
+            <button onclick="deleteCategory(${c.category_id})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function updateCategoryDropdown() {
+      const select = document.getElementById('itemCategory');
+      select.innerHTML = '<option value="">-- Select Category --</option>' +
+        globalCategories.map(c => `<option value="${c.category_id}">${c.name}</option>`).join('');
+    }
+
+    document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('categoryNameInput');
+      const name = input.value.trim();
+
+      try {
+        const res = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showAlert('Category added successfully!');
+          input.value = '';
+          loadCategories();
+        } else {
+          showAlert(data.message, false);
+        }
+      } catch (err) { showAlert('Failed to add category.', false); }
+    });
+
+    async function deleteCategory(id) {
+      if (!confirm('Are you sure you want to delete this category?')) return;
+      try {
+        const res = await fetch(`/api/admin/categories/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showAlert('Category deleted.');
+          loadCategories();
+          loadMenuItems();
+        }
+      } catch (err) { showAlert('Failed to delete category.', false); }
+    }
+
+    // --- MENU ITEM FUNCTIONS ---
+    async function loadMenuItems() {
+      try {
+        const res = await fetch('/api/admin/menu', {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          globalMenuItems = data.items;
+          renderMenuTable();
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    function renderMenuTable() {
+      const tbody = document.getElementById('menuTableBody');
+      if (globalMenuItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No menu items available.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = globalMenuItems.map(item => `
+        <tr>
+          <td>
+            <img src="${item.photo_url || 'https://via.placeholder.com/48?text=Food'}" class="item-img-preview" alt="${item.name}">
+          </td>
+          <td style="font-weight: 600;">${item.name}</td>
+          <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-main);">${item.category_name || 'Unassigned'}</span></td>
+          <td style="color: var(--primary); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</td>
+          <td>⏱️ ${item.wait_time_minutes} mins</td>
+          <td>${item.is_reward_eligible ? `<span style="color: var(--success); font-weight: 600;">🎁 ${item.points_required} pts</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
+          <td>
+            <button onclick="toggleActiveStatus(${item.item_id})" class="btn ${item.is_active ? 'btn-outline' : 'btn-danger'}" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">
+              ${item.is_active ? '✅ Active' : '❌ Inactive'}
+            </button>
+          </td>
+          <td>
+            <button onclick='editMenuItem(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-right: 0.3rem;">Edit</button>
+            <button onclick="deleteMenuItem(${item.item_id})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function toggleRewardPointsInput() {
+      const isChecked = document.getElementById('isRewardEligible').checked;
+      document.getElementById('pointsInputGroup').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function openMenuModal(item = null) {
+      document.getElementById('menuItemForm').reset();
+      document.getElementById('editItemId').value = '';
+      document.getElementById('pointsInputGroup').style.display = 'none';
+
+      if (item) {
+        document.getElementById('modalTitle').textContent = 'Edit Menu Item';
+        document.getElementById('editItemId').value = item.item_id;
+        document.getElementById('itemName').value = item.name;
+        document.getElementById('itemCategory').value = item.category_id || '';
+        document.getElementById('itemDescription').value = item.description || '';
+        document.getElementById('itemPrice').value = item.price;
+        document.getElementById('itemWaitTime').value = item.wait_time_minutes;
+        document.getElementById('itemPhoto').value = item.photo_url || '';
+        document.getElementById('isRewardEligible').checked = !!item.is_reward_eligible;
+        if (item.is_reward_eligible) {
+          document.getElementById('pointsInputGroup').style.display = 'block';
+          document.getElementById('pointsRequired').value = item.points_required || '';
+        }
+      } else {
+        document.getElementById('modalTitle').textContent = 'Add Menu Item';
+      }
+
+      document.getElementById('menuModal').style.display = 'flex';
+    }
+
+    function editMenuItem(item) {
+      openMenuModal(item);
+    }
+
+    function closeMenuModal() {
+      document.getElementById('menuModal').style.display = 'none';
+    }
+
+    document.getElementById('menuItemForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const itemId = document.getElementById('editItemId').value;
+
+      const payload = {
+        name: document.getElementById('itemName').value.trim(),
+        category_id: document.getElementById('itemCategory').value || null,
+        description: document.getElementById('itemDescription').value.trim(),
+        price: document.getElementById('itemPrice').value,
+        wait_time_minutes: document.getElementById('itemWaitTime').value,
+        photo_url: document.getElementById('itemPhoto').value.trim(),
+        is_reward_eligible: document.getElementById('isRewardEligible').checked,
+        points_required: document.getElementById('pointsRequired').value || null,
+        is_active: true
+      };
+
+      const url = itemId ? `/api/admin/menu/${itemId}` : '/api/admin/menu';
+      const method = itemId ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showAlert(itemId ? 'Menu item updated!' : 'Menu item created!');
+          closeMenuModal();
+          loadMenuItems();
+        } else {
+          alert(data.message || 'Operation failed');
+        }
+      } catch (err) { alert('Failed to save menu item.'); }
+    });
+
+    async function toggleActiveStatus(id) {
+      try {
+        const res = await fetch(`/api/admin/menu/${id}/toggle`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          loadMenuItems();
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    async function deleteMenuItem(id) {
+      if (!confirm('Are you sure you want to delete this menu item?')) return;
+      try {
+        const res = await fetch(`/api/admin/menu/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showAlert('Menu item deleted.');
+          loadMenuItems();
+        }
+      } catch (err) { showAlert('Failed to delete menu item.', false); }
+    }
+
+    // Initial load
+    loadCategories();
+    loadMenuItems();
   </script>
 </body>
 </html>

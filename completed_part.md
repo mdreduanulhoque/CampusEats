@@ -1,39 +1,32 @@
 # Completed Tasks & Project Status
 
 ## Phase 1: Database Setup & Initial Infrastructure [COMPLETED]
+- Structured MySQL database tables, established connection pool (`config/db.js`), and server setup (`server.js`).
 
-### Completed Tasks
-1. **Database Schema Design (`campuseats_simple.sql`)**:
-   - Structured all 6 MySQL database tables matching full requirements (`Users`, `Categories`, `MenuItems`, `Orders`, `OrderItems`, `Reviews`).
-   - Configured order status workflow, payment tracking, daily spending limits, loyalty points, and seed data for initial users and menu items.
-
-2. **Node.js & Express Infrastructure**:
-   - Created `package.json`, `.env`, `.env.example`, connection pool (`config/db.js`), and server setup (`server.js`).
+## Phase 2: Authentication & User Roles [COMPLETED]
+- Implemented JWT authentication, role authorization middleware, registration, login API, and client session guards for Customer, Kitchen, and Admin portals.
 
 ---
 
-## Phase 2: Authentication & User Roles [COMPLETED]
+## Phase 3: Menu Management & Customer Catalog [COMPLETED]
 
 ### Completed Tasks
-1. **Authentication API Endpoints (`routes/auth.js`)**:
-   - `POST /api/auth/register`: Customer registration with password hashing (`bcryptjs`), input validation, daily spending limit, and JWT token issuance.
-   - `POST /api/auth/login`: User authentication for Customer, Kitchen, and Admin roles using hashed password verification, returning JWT tokens.
-   - `GET /api/auth/me`: Protected user profile endpoint returning current logged-in user details.
+1. **Admin Menu & Category Management APIs (`routes/admin.js`)**:
+   - `GET /api/admin/categories` & `POST /api/admin/categories` & `DELETE /api/admin/categories/:id`: Category CRUD operations.
+   - `GET /api/admin/menu` & `POST /api/admin/menu` & `PUT /api/admin/menu/:id` & `DELETE /api/admin/menu/:id`: Full menu item management.
+   - `PATCH /api/admin/menu/:id/toggle`: Instant active/inactive status toggling.
+   - Protected with `verifyToken` and `requireRole('admin')`.
 
-2. **JWT Authentication & Role Middleware (`middleware/auth.js`)**:
-   - `verifyToken`: Validates JWT token from the `Authorization: Bearer <token>` header.
-   - `requireRole`: Restricts endpoints and frontend views based on role (`customer`, `kitchen`, `admin`).
+2. **Customer Public Menu Catalog APIs (`routes/menu.js`)**:
+   - `GET /api/menu/categories`: Category list fetch.
+   - `GET /api/menu`: Active menu catalog fetch joined with categories, average rating calculation, and review count.
+   - `GET /api/menu/:id`: Item details with customer reviews.
 
-3. **Frontend UI Shell & Role Redirection (`public/`)**:
-   - `public/css/style.css`: Responsive design system with dark mode styling, cards, form inputs, badges, and custom buttons.
-   - `public/js/auth.js`: Token management, session persistent storage, route guard, and logout logic.
-   - `public/login.html`: Interactive login page with instant demo account credentials and automatic role-based redirection.
-   - `public/register.html`: Customer signup page with name, email, password, and optional daily spending limit.
-   - `public/index.html`: Customer dashboard shell with real-time profile info, loyalty points display, and daily spending limit.
-   - `public/kitchen.html`: Kitchen Staff dashboard shell with role verification.
-   - `public/admin.html`: Administrator dashboard shell with role verification.
+3. **Frontend UI Features**:
+   - **Admin Management Interface (`public/admin.html`)**: Tabbed interface for Menu Management and Category Management. Features modal forms for creating and editing items, setting prices, wait times, photo URLs, and configuring loyalty points redemption (`is_reward_eligible` & `points_required`).
+   - **Customer Menu Catalog (`public/index.html`)**: Responsive menu cards with image preview, prep time tag, category tag, price, star ratings, category pill filtering, real-time live search, and detailed review view modal.
 
 ---
 
 ## Next Steps (Awaiting User Permission)
-- **Phase 3:** Menu Management & Customer Catalog (Admin Category & Menu CRUD APIs + UI, Customer menu browsing with ratings & wait times).
+- **Phase 4:** Cart, Daily Limit & Order Checkout (Client-side cart with `localStorage`, real-time daily spending limit enforcement, server-side limit verification, order placement transaction API `POST /api/orders`).
