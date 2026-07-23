@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - CampusEats</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/admin" class="brand">⚙️ Admin Dashboard</a>
+    <ul class="nav-links">
+      <li><span class="badge badge-admin">Administrator</span></li>
+      <li><span id="userName" style="font-weight: 600;"></span></li>
+      <li><button onclick="Auth.logout()" class="btn btn-outline" style="padding: 0.4rem 0.9rem;">Logout</button></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div style="background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+      <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Canteen Management & Sales Analytics 📊</h1>
+      <p style="color: var(--text-muted);">Manage menu items, categories, staff accounts, and view sales performance metrics.</p>
+    </div>
+
+    <!-- Phase 3 / Phase 7 Placeholder Banner -->
+    <div style="border: 2px dashed var(--border-color); padding: 3rem; text-align: center; border-radius: 16px; color: var(--text-muted);">
+      <h3 style="margin-bottom: 0.8rem; color: var(--text-main);">📈 Admin Management & Sales Metrics</h3>
+      <p>Role authorization verified for Administrator! Category/Menu CRUD will be enabled in Phase 3 and Sales Analytics in Phase 7.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 CampusEats Canteen Application. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    const user = Auth.checkAccess('admin');
+    if (user) {
+      document.getElementById('userName').textContent = user.name;
+    }
+  </script>
+</body>
+</html>

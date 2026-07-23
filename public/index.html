@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard - CampusEats</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">🍔 CampusEats</a>
+    <ul class="nav-links">
+      <li><span id="userRoleBadge" class="badge badge-customer">Customer</span></li>
+      <li><span id="userName" style="font-weight: 600;"></span></li>
+      <li><button onclick="Auth.logout()" class="btn btn-outline" style="padding: 0.4rem 0.9rem;">Logout</button></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div style="background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+      <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Hello, <span id="userGreeting">Customer</span>! 👋</h1>
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Pre-order your favorite canteen meals and track your orders in real-time.</p>
+      
+      <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 1.2rem 1.8rem; border-radius: 12px; border: 1px solid var(--border-color); flex: 1; min-width: 200px;">
+          <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem;">Loyalty Points Balance</div>
+          <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);" id="loyaltyPoints">0 pts</div>
+        </div>
+
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 1.2rem 1.8rem; border-radius: 12px; border: 1px solid var(--border-color); flex: 1; min-width: 200px;">
+          <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem;">Daily Spending Limit</div>
+          <div style="font-size: 1.8rem; font-weight: 700; color: var(--success);" id="dailyLimit">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3/4 Placeholder Banner -->
+    <div style="border: 2px dashed var(--border-color); padding: 3rem; text-align: center; border-radius: 16px; color: var(--text-muted);">
+      <h3 style="margin-bottom: 0.8rem; color: var(--text-main);">🛒 Menu Catalog & Cart System</h3>
+      <p>Authentication System (Phase 2) is active and verified! Menu catalog browsing and cart ordering will be enabled in Phase 3 & Phase 4.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 CampusEats Canteen Application. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    const user = Auth.checkAccess('customer');
+    if (user) {
+      document.getElementById('userName').textContent = user.name;
+      document.getElementById('userGreeting').textContent = user.name;
+      
+      // Fetch fresh profile from API
+      fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('loyaltyPoints').textContent = `${data.user.loyalty_points} pts`;
+          document.getElementById('dailyLimit').textContent = `$${parseFloat(data.user.daily_limit).toFixed(2)}`;
+        }
+      })
+      .catch(err => console.error(err));
+    }
+  </script>
+</body>
+</html>

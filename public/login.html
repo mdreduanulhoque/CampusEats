@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - CampusEats</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">🍔 CampusEats</a>
+    <ul class="nav-links">
+      <li><a href="/login" class="nav-link">Login</a></li>
+      <li><a href="/register" class="btn btn-primary">Register</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2>Welcome Back</h2>
+        <p>Log in to pre-order food from your campus canteen</p>
+      </div>
+
+      <div id="alertMsg" class="alert alert-danger"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="user@campuseats.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Log In</button>
+      </form>
+
+      <p style="text-align: center; margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
+        Don't have an account? <a href="/register" style="color: var(--primary); text-decoration: none; font-weight: 600;">Register here</a>
+      </p>
+
+      <!-- Quick Demo Credentials Box -->
+      <div class="demo-box">
+        <h4>🔑 Demo Credentials (Password: password123)</h4>
+        <div class="demo-item">
+          <span>Customer:</span>
+          <span class="email">customer@campuseats.com</span>
+        </div>
+        <div class="demo-item">
+          <span>Kitchen:</span>
+          <span class="email">kitchen@campuseats.com</span>
+        </div>
+        <div class="demo-item">
+          <span>Admin:</span>
+          <span class="email">admin@campuseats.com</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 CampusEats Canteen Application. All rights reserved.</p>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    Auth.redirectIfAuthenticated();
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertMsg = document.getElementById('alertMsg');
+      alertMsg.style.display = 'none';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          Auth.setSession(data.token, data.user);
+          
+          // Redirect based on role
+          if (data.user.role === 'admin') {
+            window.location.href = '/admin';
+          } else if (data.user.role === 'kitchen') {
+            window.location.href = '/kitchen';
+          } else {
+            window.location.href = '/';
+          }
+        } else {
+          alertMsg.textContent = data.message || 'Login failed.';
+          alertMsg.style.display = 'block';
+        }
+      } catch (err) {
+        alertMsg.textContent = 'Server connection error. Please try again.';
+        alertMsg.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

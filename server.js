@@ -4,14 +4,19 @@ const path = require('path');
 require('dotenv').config();
 
 const db = require('./config/db');
+const seedDefaultUsers = require('./config/seed');
+const authRoutes = require('./routes/auth');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// API Routes
+app.use('/api/auth', authRoutes);
 
 // Serve static frontend files from 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -35,15 +40,23 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Fallback route serving public/index.html if available
+// Serve frontend SPA pages
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'public', 'register.html')));
+app.get('/kitchen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'kitchen.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
+// Fallback route serving public/index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
     if (err) {
-      res.status(404).send('CampusEats API Server Running. Frontend files will be served here.');
+      res.status(404).send('CampusEats Web App Running.');
     }
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`CampusEats Server running on http://localhost:${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`🚀 CampusEats Server running on http://localhost:${PORT}`);
+  // Synchronize seed user passwords on startup
+  await seedDefaultUsers();
 });
