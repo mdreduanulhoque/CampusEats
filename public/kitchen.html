@@ -5,6 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kitchen Staff Portal - CampusEats</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .kitchen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .filters-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.5rem;
+    }
+    .order-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .order-card.status-pending { border-left: 5px solid var(--warning); }
+    .order-card.status-accepted { border-left: 5px solid var(--secondary); }
+    .order-card.status-preparing { border-left: 5px solid var(--primary); }
+    .order-card.status-ready { border-left: 5px solid var(--success); }
+    .order-card.status-picked_up { border-left: 5px solid #64748b; opacity: 0.85; }
+    .order-card.status-rejected { border-left: 5px solid var(--danger); opacity: 0.6; }
+
+    .order-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.8rem;
+    }
+    .pickup-highlight {
+      background: rgba(255, 107, 53, 0.15);
+      color: var(--primary);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.8rem;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.92rem;
+      padding: 0.3rem 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.08);
+    }
+    .order-footer {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .status-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-accepted { background: rgba(0, 78, 137, 0.25); color: #60a5fa; }
+    .badge-preparing { background: rgba(255, 107, 53, 0.2); color: var(--primary); }
+    .badge-ready { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-picked_up { background: rgba(100, 116, 139, 0.3); color: #94a3b8; }
+    .badge-rejected { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+    .paid-tag { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .unpaid-tag { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -17,15 +103,54 @@
   </nav>
 
   <div class="container">
-    <div style="background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem;">
-      <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Kitchen Order Queue 👨‍🍳</h1>
-      <p style="color: var(--text-muted);">Manage incoming orders, update prep status, and mark pickups.</p>
+    <!-- Header Banner -->
+    <div style="background: var(--bg-card); border-radius: 16px; padding: 1.5rem 2rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 style="font-size: 1.8rem; margin-bottom: 0.3rem;">Kitchen Live Order Queue 👨‍🍳</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Incoming orders with newest at top. Updates automatically every 3s.</p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="font-size: 0.85rem; color: var(--text-muted); background: rgba(15,23,42,0.6); padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid var(--border-color);">
+          🔄 Auto-syncing: <strong id="pollCountdown" style="color: var(--primary);">3s</strong>
+        </div>
+        <button onclick="fetchKitchenOrders()" class="btn btn-outline" style="padding: 0.5rem 0.9rem; font-size: 0.85rem;">⚡ Refresh Now</button>
+      </div>
     </div>
 
-    <!-- Phase 5 Placeholder Banner -->
-    <div style="border: 2px dashed var(--border-color); padding: 3rem; text-align: center; border-radius: 16px; color: var(--text-muted);">
-      <h3 style="margin-bottom: 0.8rem; color: var(--text-main);">📋 Order Queue Dashboard</h3>
-      <p>Role authorization verified for Kitchen Staff! Live order polling (every 10s) and status transitions will be implemented in Phase 5.</p>
+    <!-- Filters Bar -->
+    <div class="kitchen-header">
+      <div class="filters-bar">
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Filter Status</label>
+          <select id="statusFilter" class="form-control" onchange="fetchKitchenOrders()" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+            <option value="all">All Active Orders</option>
+            <option value="pending" selected>Pending Confirmation</option>
+            <option value="accepted">Accepted</option>
+            <option value="preparing">Preparing</option>
+            <option value="ready">Ready for Pickup</option>
+            <option value="picked_up">Completed / Picked Up</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Filter Date</label>
+          <input type="date" id="dateFilter" class="form-control" onchange="fetchKitchenOrders()" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; color-scheme: dark;">
+        </div>
+      </div>
+
+      <div>
+        <span id="orderCountBadge" style="font-size: 0.9rem; color: var(--text-muted);">0 Orders Found</span>
+      </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="kitchenAlert" class="alert alert-success"></div>
+
+    <!-- Orders Queue Grid -->
+    <div class="orders-grid" id="ordersGrid">
+      <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">Loading order queue...</div>
     </div>
   </div>
 
@@ -35,10 +160,186 @@
 
   <script src="/js/auth.js"></script>
   <script>
-    const user = Auth.checkAccess('kitchen');
-    if (user) {
-      document.getElementById('userName').textContent = user.name;
+    const kitchenUser = Auth.checkAccess('kitchen');
+    if (kitchenUser) {
+      document.getElementById('userName').textContent = kitchenUser.name;
     }
+
+    let pollInterval = null;
+    let countdownTimer = null;
+    let secondsLeft = 3;
+
+    function startAutoPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      if (countdownTimer) clearInterval(countdownTimer);
+
+      secondsLeft = 3;
+      document.getElementById('pollCountdown').textContent = `${secondsLeft}s`;
+
+      countdownTimer = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) secondsLeft = 3;
+        document.getElementById('pollCountdown').textContent = `${secondsLeft}s`;
+      }, 1000);
+
+      pollInterval = setInterval(() => {
+        fetchKitchenOrders(true); // silent background fetch
+      }, 3000);
+    }
+
+    function showAlert(msg, isSuccess = true) {
+      const alert = document.getElementById('kitchenAlert');
+      alert.className = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+      alert.textContent = msg;
+      alert.style.display = 'block';
+      setTimeout(() => alert.style.display = 'none', 4000);
+    }
+
+    async function fetchKitchenOrders(isSilent = false) {
+      const status = document.getElementById('statusFilter').value;
+      const date = document.getElementById('dateFilter').value;
+
+      let url = `/api/kitchen/orders?status=${status}`;
+      if (date) url += `&date=${date}`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          renderOrdersGrid(data.orders);
+          document.getElementById('orderCountBadge').textContent = `${data.orders.length} Order(s) Shown`;
+        }
+      } catch (err) {
+        if (!isSilent) console.error('Failed to fetch kitchen orders:', err);
+      }
+    }
+
+    function renderOrdersGrid(orders) {
+      const grid = document.getElementById('ordersGrid');
+      if (orders.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 4rem;">No incoming orders matching your filter.</div>`;
+        return;
+      }
+
+      grid.innerHTML = orders.map(order => {
+        const pickupDate = new Date(order.pickup_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const fullPickup = new Date(order.pickup_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+
+        return `
+          <div class="order-card status-${order.status}">
+            <div class="order-meta">
+              <div>
+                <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">#${order.order_id}</span>
+                <div style="font-weight: 600; font-size: 0.95rem; margin-top: 0.2rem;">👤 ${order.customer_name}</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="status-badge badge-${order.status}">${order.status.replace('_', ' ')}</span>
+                <div style="margin-top: 0.3rem;">
+                  <span class="badge ${order.payment_status === 'paid' ? 'paid-tag' : 'unpaid-tag'}">${order.payment_status.toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pickup-highlight">
+              ⏰ Pickup Time: ${pickupDate} (${fullPickup})
+            </div>
+
+            <!-- Items List -->
+            <div style="margin-bottom: 1rem; max-height: 150px; overflow-y: auto;">
+              ${order.items.map(item => `
+                <div class="item-row">
+                  <span><strong>${item.quantity}x</strong> ${item.item_name}</span>
+                  <span style="color: var(--text-muted);">$${parseFloat(item.subtotal).toFixed(2)}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Order Summary Footer -->
+            <div class="order-footer">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Total Cash Due:</span>
+                <span style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">$${parseFloat(order.total_amount).toFixed(2)}</span>
+              </div>
+
+              <!-- Status Action Buttons -->
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                ${renderStatusButtons(order)}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStatusButtons(order) {
+      const { order_id, status, payment_status } = order;
+
+      if (status === 'pending') {
+        return `
+          <button onclick="updateOrderStatus(${order_id}, 'accepted')" class="btn btn-primary" style="flex: 1; padding: 0.4rem 0.6rem; font-size: 0.85rem;">Accept Order</button>
+          <button onclick="updateOrderStatus(${order_id}, 'rejected')" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Reject</button>
+        `;
+      }
+
+      if (status === 'accepted') {
+        return `
+          <button onclick="updateOrderStatus(${order_id}, 'preparing')" class="btn btn-primary" style="flex: 1; padding: 0.4rem 0.6rem; font-size: 0.85rem;">Start Preparing 🍳</button>
+          <button onclick="updateOrderStatus(${order_id}, 'rejected')" class="btn btn-danger" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Cancel</button>
+        `;
+      }
+
+      if (status === 'preparing') {
+        return `
+          <button onclick="updateOrderStatus(${order_id}, 'ready')" class="btn btn-primary" style="flex: 1; padding: 0.4rem 0.6rem; font-size: 0.85rem; background: var(--success);">Mark Ready for Pickup 🔔</button>
+        `;
+      }
+
+      if (status === 'ready') {
+        return `
+          <button onclick="updateOrderStatus(${order_id}, 'picked_up')" class="btn btn-primary" style="flex: 1; padding: 0.4rem 0.6rem; font-size: 0.85rem; background: var(--success);">💵 Mark Cash Received & Picked Up</button>
+        `;
+      }
+
+      if (status === 'picked_up') {
+        return `<span style="color: var(--success); font-weight: 600; font-size: 0.85rem; padding: 0.4rem 0;">✓ Order Picked Up & Cash Collected</span>`;
+      }
+
+      if (status === 'rejected') {
+        return `<span style="color: var(--danger); font-weight: 600; font-size: 0.85rem; padding: 0.4rem 0;">❌ Order Rejected / Cancelled</span>`;
+      }
+
+      return '';
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      try {
+        const res = await fetch(`/api/kitchen/orders/${orderId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: JSON.stringify({ new_status: newStatus })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          showAlert(data.message);
+          fetchKitchenOrders();
+        } else {
+          showAlert(data.message, false);
+        }
+      } catch (err) {
+        showAlert('Failed to update status.', false);
+      }
+    }
+
+    // Initial load & start 10s auto-polling
+    fetchKitchenOrders();
+    startAutoPolling();
   </script>
 </body>
 </html>
