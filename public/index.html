@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CampusEats - Campus Canteen Pre-order</title>
+  <title>CampusEats - Canteen Pre-order & Cart</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .menu-header {
@@ -129,6 +129,29 @@
       font-size: 0.85rem;
       color: #facc15;
     }
+    
+    /* Cart Button Floating */
+    .cart-btn-nav {
+      position: relative;
+      padding: 0.5rem 1rem;
+    }
+    .cart-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    /* Modal Overlay & Drawer */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -145,31 +168,59 @@
       border-radius: 16px;
       padding: 2rem;
       width: 100%;
-      max-width: 500px;
+      max-width: 550px;
       max-height: 90vh;
       overflow-y: auto;
+    }
+    .cart-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: rgba(15,23,42,0.8);
+      color: var(--text-main);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .receipt-box {
+      background: rgba(15,23,42,0.8);
+      border: 1px dashed var(--primary);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
   <nav class="navbar">
     <a href="/" class="brand">🍔 CampusEats</a>
-    <ul class="nav-links" id="navAuthSection">
-      <li><span id="userRoleBadge" class="badge badge-customer">Customer</span></li>
+    <ul class="nav-links">
+      <li>
+        <button onclick="openCartModal()" class="btn btn-outline cart-btn-nav">
+          🛒 Cart <span id="cartBadgeCount" class="cart-badge">0</span>
+        </button>
+      </li>
       <li><span id="userName" style="font-weight: 600;"></span></li>
       <li><button onclick="Auth.logout()" class="btn btn-outline" style="padding: 0.4rem 0.9rem;">Logout</button></li>
     </ul>
   </nav>
 
   <div class="container">
-    <!-- User Banner -->
+    <!-- User Banner with Spending Limit Indicator -->
     <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 16px; padding: 1.8rem 2rem; border: 1px solid var(--border-color); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
       <div>
-        <h1 style="font-size: 1.8rem; margin-bottom: 0.4rem;">Delicious Campus Food, Pre-ordered! 🍽️</h1>
-        <p style="color: var(--text-muted);">Choose your favorite meal, pick up on time, and pay cash on arrival.</p>
+        <h1 style="font-size: 1.8rem; margin-bottom: 0.4rem;">Pre-order Your Canteen Meals 🍽️</h1>
+        <p style="color: var(--text-muted);">Choose your pickup time and pay cash on arrival.</p>
       </div>
 
-      <div style="display: flex; gap: 1rem;">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
         <div style="background: rgba(255, 107, 53, 0.1); padding: 0.8rem 1.2rem; border-radius: 10px; border: 1px solid rgba(255, 107, 53, 0.3);">
           <div style="font-size: 0.75rem; color: var(--text-muted);">Loyalty Points</div>
           <div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);" id="loyaltyPoints">0 pts</div>
@@ -178,6 +229,11 @@
         <div style="background: rgba(16, 185, 129, 0.1); padding: 0.8rem 1.2rem; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
           <div style="font-size: 0.75rem; color: var(--text-muted);">Daily Limit</div>
           <div style="font-size: 1.3rem; font-weight: 700; color: var(--success);" id="dailyLimit">$0.00</div>
+        </div>
+
+        <div style="background: rgba(0, 78, 137, 0.15); padding: 0.8rem 1.2rem; border-radius: 10px; border: 1px solid rgba(0, 78, 137, 0.4);">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Spent Today</div>
+          <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent);" id="spentToday">$0.00</div>
         </div>
       </div>
     </div>
@@ -200,7 +256,69 @@
     </div>
   </div>
 
-  <!-- ITEM DETAIL & REVIEWS MODAL -->
+  <!-- CART & CHECKOUT MODAL -->
+  <div id="cartModal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem;">
+        <h2>🛒 Your Food Cart</h2>
+        <button onclick="closeCartModal()" class="btn btn-outline" style="padding: 0.3rem 0.7rem;">✕</button>
+      </div>
+
+      <!-- Limit Alert inside Cart -->
+      <div id="cartLimitAlert" class="alert alert-danger"></div>
+
+      <!-- Cart Items List -->
+      <div id="cartItemsList" style="max-height: 250px; overflow-y: auto; margin-bottom: 1.2rem;"></div>
+
+      <!-- Pickup Time Selection with Colored Clock Icon -->
+      <div style="background: rgba(15,23,42,0.6); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
+        <h4 style="margin-bottom: 0.6rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+          <span style="background: rgba(255, 107, 53, 0.15); color: var(--primary); padding: 0.3rem 0.5rem; border-radius: 8px; font-size: 1.2rem;">⏰</span>
+          Select Pickup Date & Time
+        </h4>
+        <div class="form-group" style="margin-bottom: 0.4rem;">
+          <input type="datetime-local" id="pickupTimeInput" class="form-control" required style="color-scheme: dark;">
+        </div>
+        <small style="color: var(--text-muted);">Orders are Cash on Pickup only at the canteen kitchen.</small>
+      </div>
+
+      <!-- Cart Summary & Total -->
+      <div style="background: rgba(30,41,59,0.9); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.9rem;">
+          <span>Subtotal:</span>
+          <span id="cartSubtotal">$0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: 700; color: var(--text-main);">
+          <span>Total (Cash on Pickup):</span>
+          <span id="cartTotal" style="color: var(--primary);">$0.00</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+        <button onclick="closeCartModal()" class="btn btn-outline">Keep Browsing</button>
+        <button id="checkoutBtn" onclick="submitOrder()" class="btn btn-primary">Place Order (Cash on Pickup)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIGITAL RECEIPT MODAL -->
+  <div id="receiptModal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="text-align: center; margin-bottom: 1rem;">
+        <div style="font-size: 3rem; margin-bottom: 0.3rem;">🎉</div>
+        <h2>Order Confirmed!</h2>
+        <p style="color: var(--text-muted);">Show this digital receipt at the canteen kitchen.</p>
+      </div>
+
+      <div id="receiptContent" class="receipt-box"></div>
+
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <button onclick="closeReceiptModal()" class="btn btn-primary">Done & Back to Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITEM REVIEWS MODAL -->
   <div id="itemModal" class="modal-overlay">
     <div class="modal-content">
       <div id="modalItemDetails"></div>
@@ -215,43 +333,51 @@
   </footer>
 
   <script src="/js/auth.js"></script>
+  <script src="/js/cart.js"></script>
   <script>
     const customerUser = Auth.checkAccess('customer');
     if (customerUser) {
       document.getElementById('userName').textContent = customerUser.name;
-
-      // Fetch fresh profile
-      fetch('/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          document.getElementById('loyaltyPoints').textContent = `${data.user.loyalty_points} pts`;
-          document.getElementById('dailyLimit').textContent = `$${parseFloat(data.user.daily_limit).toFixed(2)}`;
-        }
-      });
     }
 
+    let userDailyLimit = 0.00;
+    let userTodaySpent = 0.00;
     let allCategories = [];
     let allMenuItems = [];
     let activeCategory = 'all';
 
+    async function loadInitialData() {
+      await fetchLimitStatus();
+      await loadCatalogData();
+      updateCartBadge();
+    }
+
+    async function fetchLimitStatus() {
+      try {
+        const res = await fetch('/api/orders/daily-limit-status', {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          userDailyLimit = parseFloat(data.daily_limit);
+          userTodaySpent = parseFloat(data.today_spent);
+          document.getElementById('loyaltyPoints').textContent = `${data.loyalty_points} pts`;
+          document.getElementById('dailyLimit').textContent = `$${userDailyLimit.toFixed(2)}`;
+          document.getElementById('spentToday').textContent = `$${userTodaySpent.toFixed(2)}`;
+        }
+      } catch (err) { console.error(err); }
+    }
+
     async function loadCatalogData() {
       try {
-        // Fetch Categories
         const catRes = await fetch('/api/menu/categories');
         const catData = await catRes.json();
         if (catData.status === 'success') {
           allCategories = catData.categories;
           renderCategoryPills();
         }
-
-        // Fetch Menu Items
         await fetchMenuItems();
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     }
 
     function renderCategoryPills() {
@@ -298,37 +424,240 @@
         return;
       }
 
-      grid.innerHTML = items.map(item => `
-        <div class="menu-card">
-          <div class="card-img-wrapper">
-            <img src="${item.photo_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'}" class="card-img" alt="${item.name}">
-            <div class="card-tag">${item.category_name || 'Menu'}</div>
-            <div class="prep-tag">⏱️ ${item.wait_time_minutes} mins prep</div>
-          </div>
+      const cart = Cart.getCart();
 
-          <div class="card-body">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <h3 class="card-title">${item.name}</h3>
-              <div class="rating-badge">
-                ★ <span>${item.avg_rating > 0 ? item.avg_rating : 'New'}</span>
-              </div>
+      grid.innerHTML = items.map(item => {
+        const cartItem = cart.find(i => i.item_id === item.item_id);
+        const isAdded = !!cartItem;
+
+        return `
+          <div class="menu-card">
+            <div class="card-img-wrapper">
+              <img src="${item.photo_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'}" class="card-img" alt="${item.name}">
+              <div class="card-tag">${item.category_name || 'Menu'}</div>
+              <div class="prep-tag">⏱️ ${item.wait_time_minutes} mins prep</div>
             </div>
 
-            <p class="card-desc">${item.description || 'Delicious meal freshly prepared by our campus canteen kitchen.'}</p>
-
-            ${item.is_reward_eligible ? `
-              <div style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.8rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px; margin-bottom: 0.8rem; display: inline-block;">
-                🎁 Free with ${item.points_required} Loyalty Points
+            <div class="card-body">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h3 class="card-title">${item.name}</h3>
+                <div class="rating-badge">
+                  ★ <span>${item.avg_rating > 0 ? item.avg_rating : 'New'}</span>
+                </div>
               </div>
-            ` : ''}
 
-            <div class="card-footer">
-              <div class="price-tag">$${parseFloat(item.price).toFixed(2)}</div>
-              <button onclick="viewItemDetails(${item.item_id})" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">View & Reviews</button>
+              <p class="card-desc">${item.description || 'Freshly prepared canteen meal.'}</p>
+
+              <div class="card-footer">
+                <div class="price-tag">$${parseFloat(item.price).toFixed(2)}</div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button onclick="viewItemDetails(${item.item_id})" class="btn btn-outline" style="padding: 0.4rem 0.7rem; font-size: 0.85rem;">Reviews</button>
+                  <button onclick='handleAddToCart(${JSON.stringify(item).replace(/'/g, "&apos;")})' 
+                          class="btn ${isAdded ? 'btn-outline' : 'btn-primary'}" 
+                          style="padding: 0.4rem 0.9rem; font-size: 0.85rem; ${isAdded ? 'border-color: var(--success); color: var(--success); background: rgba(16, 185, 129, 0.12);' : ''}">
+                    ${isAdded ? `✓ Added (${cartItem.quantity})` : '+ Cart'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
+        `;
+      }).join('');
+    }
+
+    function handleAddToCart(item) {
+      Cart.addToCart(item);
+      updateCartBadge();
+      renderMenuGrid(allMenuItems);
+    }
+
+    function updateCartBadge() {
+      const count = Cart.getCartCount();
+      document.getElementById('cartBadgeCount').textContent = count;
+    }
+
+    function openCartModal() {
+      renderCartUI();
+      try {
+        const now = new Date();
+        const futurePickup = new Date(now.getTime() + 30 * 60000);
+        
+        const toLocalISO = (date) => {
+          const offsetMs = date.getTimezoneOffset() * 60000;
+          return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+        };
+
+        const pickupInput = document.getElementById('pickupTimeInput');
+        if (pickupInput) {
+          pickupInput.value = toLocalISO(futurePickup);
+          pickupInput.min = toLocalISO(now);
+        }
+      } catch (err) {
+        console.error('Error setting pickup time:', err);
+      }
+      document.getElementById('cartModal').style.display = 'flex';
+    }
+
+    function closeCartModal() {
+      document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function renderCartUI() {
+      const cart = Cart.getCart();
+      const listContainer = document.getElementById('cartItemsList');
+      const alertContainer = document.getElementById('cartLimitAlert');
+      const checkoutBtn = document.getElementById('checkoutBtn');
+
+      alertContainer.style.display = 'none';
+
+      if (cart.length === 0) {
+        listContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">Your cart is empty. Add some delicious meals!</div>`;
+        document.getElementById('cartSubtotal').textContent = '$0.00';
+        document.getElementById('cartTotal').textContent = '$0.00';
+        checkoutBtn.disabled = true;
+        return;
+      }
+
+      listContainer.innerHTML = cart.map(item => `
+        <div class="cart-item-row">
+          <div style="flex: 1;">
+            <div style="font-weight: 600;">${item.name}</div>
+            <div style="font-size: 0.85rem; color: var(--primary); font-weight: 700;">$${item.price.toFixed(2)} each</div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0 0.8rem;">
+            <button onclick="changeQty(${item.item_id}, -1)" class="qty-btn">-</button>
+            <span style="font-weight: 600; min-width: 20px; text-align: center;">${item.quantity}</span>
+            <button onclick="changeQty(${item.item_id}, 1)" class="qty-btn">+</button>
+          </div>
+
+          <div style="font-weight: 700; min-width: 65px; text-align: right;">
+            $${(item.price * item.quantity).toFixed(2)}
+          </div>
+
+          <button onclick="removeItemFromCart(${item.item_id})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0.2rem 0.4rem; margin-left: 0.6rem;" title="Remove item">🗑️</button>
         </div>
       `).join('');
+
+      const total = Cart.getCartTotal();
+      document.getElementById('cartSubtotal').textContent = `$${total.toFixed(2)}`;
+      document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+
+      // Check Daily Limit
+      if (userDailyLimit > 0) {
+        const potentialTotal = userTodaySpent + total;
+        if (potentialTotal > userDailyLimit) {
+          alertContainer.innerHTML = `⚠️ <strong>Daily Limit Exceeded!</strong><br>Your daily limit is <strong>$${userDailyLimit.toFixed(2)}</strong>. You spent $${userTodaySpent.toFixed(2)} today. This order ($${total.toFixed(2)}) brings total to $${potentialTotal.toFixed(2)}.`;
+          alertContainer.style.display = 'block';
+          checkoutBtn.disabled = true;
+          checkoutBtn.style.opacity = '0.5';
+          return;
+        }
+      }
+
+      checkoutBtn.disabled = false;
+      checkoutBtn.style.opacity = '1';
+    }
+
+    function changeQty(itemId, change) {
+      Cart.updateQuantity(itemId, change);
+      updateCartBadge();
+      renderCartUI();
+      renderMenuGrid(allMenuItems);
+    }
+
+    function removeItemFromCart(itemId) {
+      Cart.removeFromCart(itemId);
+      updateCartBadge();
+      renderCartUI();
+      renderMenuGrid(allMenuItems);
+    }
+
+    async function submitOrder() {
+      const cart = Cart.getCart();
+      if (cart.length === 0) return;
+
+      const pickupTime = document.getElementById('pickupTimeInput').value;
+      if (!pickupTime) {
+        alert('Please select a pickup date and time.');
+        return;
+      }
+
+      const payload = {
+        pickup_time: pickupTime,
+        items: cart.map(i => ({
+          item_id: i.item_id,
+          name: i.name,
+          quantity: i.quantity,
+          is_free_reward: false
+        }))
+      };
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          Cart.clearCart();
+          updateCartBadge();
+          closeCartModal();
+          renderMenuGrid(allMenuItems);
+          await fetchLimitStatus();
+          showDigitalReceipt(data.order);
+        } else {
+          const alertContainer = document.getElementById('cartLimitAlert');
+          alertContainer.textContent = data.message || 'Failed to place order.';
+          alertContainer.style.display = 'block';
+        }
+      } catch (err) {
+        alert('Error placing order. Please try again.');
+      }
+    }
+
+    function showDigitalReceipt(order) {
+      const container = document.getElementById('receiptContent');
+      const pickupFormatted = new Date(order.pickup_time).toLocaleString();
+
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.8rem;">
+          <span>Order #: <strong>#${order.order_id}</strong></span>
+          <span class="badge badge-customer">${order.status.toUpperCase()}</span>
+        </div>
+
+        <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+          <div>Customer: <strong>${customerUser.name}</strong></div>
+          <div>Pickup Time: <strong>${pickupFormatted}</strong></div>
+          <div>Payment: <strong>Cash on Pickup (Unpaid)</strong></div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-bottom: 0.8rem;">
+          ${order.items.map(i => `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.3rem;">
+              <span>${i.quantity}x ${i.name}</span>
+              <span>$${parseFloat(i.subtotal).toFixed(2)}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; border-top: 1px solid var(--border-color); padding-top: 0.6rem; color: var(--primary);">
+          <span>Total Cash Due:</span>
+          <span>$${parseFloat(order.total_amount).toFixed(2)}</span>
+        </div>
+      `;
+
+      document.getElementById('receiptModal').style.display = 'flex';
+    }
+
+    function closeReceiptModal() {
+      document.getElementById('receiptModal').style.display = 'none';
     }
 
     async function viewItemDetails(itemId) {
@@ -374,7 +703,7 @@
       document.getElementById('itemModal').style.display = 'none';
     }
 
-    loadCatalogData();
+    loadInitialData();
   </script>
 </body>
 </html>

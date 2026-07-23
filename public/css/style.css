@@ -192,6 +192,13 @@ body {
   border-color: var(--primary);
 }
 
+/* Datetime picker calendar/clock icon color customization */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(58%) sepia(85%) saturate(1500%) hue-rotate(345deg) brightness(100%) contrast(101%);
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
 /* Alerts */
 .alert {
   padding: 0.8rem 1rem;

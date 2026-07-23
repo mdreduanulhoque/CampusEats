@@ -9,6 +9,7 @@ const seedDefaultUsers = require('./config/seed');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const menuRoutes = require('./routes/menu');
+const orderRoutes = require('./routes/orders');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/menu', menuRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Serve static frontend files from 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));
