@@ -395,7 +395,13 @@ footer {
     margin: 1.5rem auto;
   }
 
-  /* Sticky Mobile Bottom Bar styling (ready for Phase 3 usage) */
+  /* Hide duplicated top header Cart and Logout buttons on mobile viewports since sticky bottom nav handles them */
+  .navbar .cart-btn-nav,
+  .navbar .btn-logout-header {
+    display: none !important;
+  }
+
+  /* Sticky Mobile Bottom Bar styling */
   .mobile-bottom-nav {
     display: flex;
     justify-content: space-around;
@@ -434,5 +440,6 @@ footer {
     color: var(--primary);
   }
 }
+
 
 

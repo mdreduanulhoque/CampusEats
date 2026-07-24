@@ -54,5 +54,15 @@
 - Added quick 1-click demo credential autofill helpers for Customer, Kitchen Staff, and Administrator accounts on the Login page to streamline developer & user testing.
 - Verified responsive layout and touch targets across desktop and mobile screens.
 
+## Visual Redesign Phase 3: Customer Portal Redesign (`index.html`) [COMPLETED]
+- Redesigned Customer Portal (`public/index.html`) with lightweight theme cards, stats banner (Loyalty Points, Daily Limit, Spent Today), navigation tabs, category pills, and search toolbar.
+- Modernized Food Cards (`.menu-card`) layout with image hover zoom, category tags, prep-time badges, average star ratings, price tags, and +Cart / ✓ Added state styling.
+- Added **Sticky Mobile Bottom Navigation Bar (`.mobile-bottom-nav`)** providing 1-tap mobile navigation for Menu, Cart, Orders, and Logout.
+- **Mobile Header Space Optimization**: Automatically hid duplicated Cart and Logout buttons from the top header navbar on mobile viewports (`< 768px`) to keep the header clean, spacious, and clutter-free.
+- Enforced `body { padding-bottom: 85px }` safety spacing on viewports `< 768px` so that food cards, modals, receipts, and footers never get obscured under the sticky bottom navbar when scrolled to the lowest bottom.
+- Preserved 100% of functional DOM hooks (`#cartModal`, `#receiptModal`, `#reviewModal`, `#itemModal`, `#pickupTimeInput`, `#cartItemsList`, `#checkoutBtn`, `#cartBadgeCount`, etc.) and cart/spending-limit/receipt JS logic.
+
+
+
 
 
