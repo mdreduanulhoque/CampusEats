@@ -9,18 +9,19 @@
 <body>
   <nav class="navbar">
     <a href="/" class="brand">
-      <img src="/campuseats_logo.png" alt="CampusEats Logo" style="height: 40px; width: auto; object-fit: contain;">
+      <img src="/campuseats_logo.png" alt="CampusEats Logo" style="height: 38px; width: auto; object-fit: contain;">
       CampusEats
     </a>
     <ul class="nav-links">
-      <li><a href="/login" class="nav-link">Login</a></li>
-      <li><a href="/register" class="btn btn-primary">Register</a></li>
+      <li><a href="/login" class="nav-link" style="color: var(--primary); font-weight: 700;">Login</a></li>
+      <li><a href="/register" class="btn btn-primary" style="padding: 0.45rem 1.1rem; font-size: 0.88rem;">Register</a></li>
     </ul>
   </nav>
 
   <div class="container">
     <div class="auth-card">
       <div class="auth-header">
+        <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">🔑</div>
         <h2>Welcome Back</h2>
         <p>Log in to pre-order food from your campus canteen</p>
       </div>
@@ -38,28 +39,29 @@
           <input type="password" id="password" class="form-control" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Log In</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.75rem;">Log In</button>
       </form>
 
       <p style="text-align: center; margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
-        Don't have an account? <a href="/register" style="color: var(--primary); text-decoration: none; font-weight: 600;">Register here</a>
+        Don't have an account? <a href="/register" style="color: var(--primary); text-decoration: none; font-weight: 700;">Register here</a>
       </p>
 
       <!-- Quick Demo Credentials Box -->
       <div class="demo-box">
         <h4>🔑 Demo Credentials (Password: password123)</h4>
-        <div class="demo-item">
+        <div class="demo-item" onclick="fillDemo('customer@campuseats.com')" style="cursor: pointer; padding: 0.2rem 0.4rem; border-radius: 4px; transition: background 0.2s;" title="Click to autofill customer email">
           <span>Customer:</span>
           <span class="email">customer@campuseats.com</span>
         </div>
-        <div class="demo-item">
+        <div class="demo-item" onclick="fillDemo('kitchen@campuseats.com')" style="cursor: pointer; padding: 0.2rem 0.4rem; border-radius: 4px; transition: background 0.2s;" title="Click to autofill kitchen email">
           <span>Kitchen:</span>
           <span class="email">kitchen@campuseats.com</span>
         </div>
-        <div class="demo-item">
+        <div class="demo-item" onclick="fillDemo('admin@campuseats.com')" style="cursor: pointer; padding: 0.2rem 0.4rem; border-radius: 4px; transition: background 0.2s;" title="Click to autofill admin email">
           <span>Admin:</span>
           <span class="email">admin@campuseats.com</span>
         </div>
+        <small style="display: block; margin-top: 0.5rem; color: var(--text-muted); font-size: 0.78rem; text-align: center;">💡 Tip: Click any demo email above to autofill!</small>
       </div>
     </div>
   </div>
@@ -71,6 +73,11 @@
   <script src="/js/auth.js"></script>
   <script>
     Auth.redirectIfAuthenticated();
+
+    function fillDemo(email) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = 'password123';
+    }
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -112,3 +119,4 @@
   </script>
 </body>
 </html>
+
