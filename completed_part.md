@@ -40,3 +40,12 @@
 
 3. **Full System Integration**:
    - End-to-end user workflows tested across Customer, Kitchen Staff, and Administrator portals.
+
+---
+
+## Visual Redesign Phase 1: CSS Architecture & Global Design Tokens (Lightweight Theme) [COMPLETED]
+- Integrated custom color palette: Burnt Orange (`#D46D25`), Sage Green (`#A4B885`), Warm Peach (`#FDC086`), Soft Cream Yellow (`#FFF6A1`), and crisp lightweight surface tokens (`#faf9f6` page background, `#ffffff` cards, `#e2e8f0` light borders).
+- Updated `:root` design tokens, font hierarchy ('Outfit'), soft elevation shadows, custom scrollbar styling, alert boxes, modal containers, and elevated button gradients in `public/css/style.css`.
+- Configured mobile sticky bottom navigation infrastructure (`.mobile-bottom-nav`) and bottom content safety spacing (`padding-bottom: 85px` on viewports `< 768px`) to prevent any menu or item from being obscured under the bottom navigation bar.
+
+
