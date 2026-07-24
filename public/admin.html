@@ -8,25 +8,31 @@
   <style>
     .admin-tabs {
       display: flex;
-      gap: 1rem;
+      gap: 0.6rem;
       border-bottom: 1px solid var(--border-color);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.8rem;
       flex-wrap: wrap;
     }
     .tab-btn {
-      padding: 0.8rem 1.5rem;
+      padding: 0.75rem 1.4rem;
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 0.95rem;
+      font-weight: 700;
       cursor: pointer;
       border-bottom: 3px solid transparent;
       transition: all 0.2s;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+    .tab-btn:hover {
+      color: var(--primary);
+      background: var(--bg-card-subtle);
     }
     .tab-btn.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
+      background: var(--bg-card);
     }
     .tab-content {
       display: none;
@@ -34,53 +40,78 @@
     .tab-content.active {
       display: block;
     }
+
+    /* Modern Lightweight Data Table */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      margin-top: 1rem;
+      background: var(--bg-card);
+    }
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
       background: var(--bg-card);
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border-color);
     }
     .data-table th, .data-table td {
-      padding: 0.9rem 1.2rem;
+      padding: 0.95rem 1.2rem;
       text-align: left;
       border-bottom: 1px solid var(--border-color);
     }
     .data-table th {
-      background: rgba(15, 23, 42, 0.8);
+      background: var(--bg-card-subtle);
       color: var(--text-muted);
-      font-weight: 600;
-      font-size: 0.85rem;
+      font-weight: 700;
+      font-size: 0.78rem;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .data-table tbody tr {
+      transition: background 0.15s ease;
+    }
+    .data-table tbody tr:hover {
+      background: rgba(212, 109, 37, 0.02);
+    }
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
     }
     .item-img-preview {
       width: 48px;
       height: 48px;
-      border-radius: 8px;
+      border-radius: 10px;
       object-fit: cover;
+      border: 1px solid var(--border-color);
     }
+
+    /* Modal Overlay & Card */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: var(--backdrop-blur);
+      -webkit-backdrop-filter: var(--backdrop-blur);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      padding: 1rem;
     }
     .modal-content {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       padding: 2rem;
       width: 100%;
-      max-width: 550px;
+      max-width: 560px;
       max-height: 90vh;
       overflow-y: auto;
+      box-shadow: var(--shadow-lg);
     }
+
+    /* Metrics Stat Grid */
     .stat-cards-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -90,34 +121,40 @@
     .stat-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      padding: 1.6rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+      box-shadow: var(--shadow-md);
     }
     .stat-title {
       font-size: 0.85rem;
       color: var(--text-muted);
-      margin-bottom: 0.4rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
     }
     .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
+      font-size: 2.1rem;
+      font-weight: 800;
     }
   </style>
 </head>
 <body>
   <nav class="navbar">
-    <a href="/admin" class="brand">⚙️ CampusEats Admin</a>
+    <a href="/admin" class="brand">⚙️ </a>
     <ul class="nav-links">
       <li><span class="badge badge-admin">Administrator</span></li>
-      <li><span id="userName" style="font-weight: 600;"></span></li>
+      <li><span id="userName" style="font-weight: 700; color: var(--text-main);"></span></li>
       <li><button onclick="Auth.logout()" class="btn btn-outline" style="padding: 0.4rem 0.9rem;">Logout</button></li>
     </ul>
   </nav>
 
   <div class="container">
-    <div style="margin-bottom: 1.5rem;">
-      <h1 style="font-size: 2rem;">Administrator Dashboard</h1>
-      <p style="color: var(--text-muted);">Analytics reports, menu catalog management, and user accounts.</p>
+    <div style="background: var(--bg-card); border-radius: var(--radius-lg); padding: 1.6rem 2rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
+      <h1 style="font-size: 1.8rem; margin-bottom: 0.3rem; font-weight: 800; color: var(--text-main);">Administrator Dashboard ⚙️</h1>
+      <p style="color: var(--text-muted); font-size: 0.92rem;">Analytics reports, menu catalog management, and user accounts.</p>
     </div>
 
     <!-- Tabs Navigation -->
@@ -134,18 +171,18 @@
     <!-- TAB 1: SALES ANALYTICS & METRICS -->
     <div id="analyticsTab" class="tab-content active">
       <!-- Date Range Filter Bar -->
-      <div style="background: rgba(15,23,42,0.6); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+      <div style="background: var(--bg-card); padding: 1.4rem 1.6rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
           <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Start Date</label>
-            <input type="date" id="startDateFilter" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; color-scheme: dark;">
+            <label style="font-size: 0.82rem; color: var(--text-main); font-weight: 700; display: block; margin-bottom: 0.25rem;">Start Date</label>
+            <input type="date" id="startDateFilter" class="form-control" style="padding: 0.45rem 0.85rem; font-size: 0.9rem; width: auto;">
           </div>
           <div>
-            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">End Date</label>
-            <input type="date" id="endDateFilter" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; color-scheme: dark;">
+            <label style="font-size: 0.82rem; color: var(--text-main); font-weight: 700; display: block; margin-bottom: 0.25rem;">End Date</label>
+            <input type="date" id="endDateFilter" class="form-control" style="padding: 0.45rem 0.85rem; font-size: 0.9rem; width: auto;">
           </div>
-          <button onclick="loadAnalyticsData()" class="btn btn-primary" style="margin-top: 1rem; padding: 0.5rem 1rem;">Filter Reports</button>
-          <button onclick="resetAnalyticsFilter()" class="btn btn-outline" style="margin-top: 1rem; padding: 0.5rem 1rem;">Reset</button>
+          <button onclick="loadAnalyticsData()" class="btn btn-primary" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">Filter Reports</button>
+          <button onclick="resetAnalyticsFilter()" class="btn btn-outline" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">Reset</button>
         </div>
       </div>
 
@@ -161,147 +198,159 @@
         </div>
         <div class="stat-card">
           <div class="stat-title">📦 Total Orders Placed</div>
-          <div class="stat-value" style="color: var(--accent);" id="totalOrdersVal">0</div>
+          <div class="stat-value" style="color: #0284c7;" id="totalOrdersVal">0</div>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
         <!-- Best Selling Items Table -->
         <div>
-          <h3>🔥 Best-Selling Menu Items</h3>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Item Name</th>
-                <th>Category</th>
-                <th>Units Sold</th>
-                <th>Revenue</th>
-              </tr>
-            </thead>
-            <tbody id="bestSellersTableBody">
-              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading best sellers...</td></tr>
-            </tbody>
-          </table>
+          <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">🔥 Best-Selling Menu Items</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th>Category</th>
+                  <th>Units Sold</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody id="bestSellersTableBody">
+                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading best sellers...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Peak Order Hours Table -->
         <div>
-          <h3>⏰ Peak Order Hours</h3>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Hour Window</th>
-                <th>Orders Count</th>
-                <th>Total Volume</th>
-              </tr>
-            </thead>
-            <tbody id="peakHoursTableBody">
-              <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading peak hours...</td></tr>
-            </tbody>
-          </table>
+          <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">⏰ Peak Order Hours</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Hour Window</th>
+                  <th>Orders Count</th>
+                  <th>Total Volume</th>
+                </tr>
+              </thead>
+              <tbody id="peakHoursTableBody">
+                <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading peak hours...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <!-- Recent Orders Log -->
-      <h3>📜 Recent Orders Log</h3>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Placed Time</th>
-            <th>Pickup Time</th>
-            <th>Amount</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="recentOrdersTableBody">
-          <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading recent orders...</td></tr>
-        </tbody>
-      </table>
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">📜 Recent Orders Log</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Placed Time</th>
+              <th>Pickup Time</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="recentOrdersTableBody">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading recent orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- TAB 2: MENU CATALOG MANAGEMENT -->
     <div id="menuTab" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3>All Menu Items</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">All Menu Items</h3>
         <button onclick="openMenuModal()" class="btn btn-primary">+ Add New Item</button>
       </div>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Photo</th>
-            <th>Item Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Prep Time</th>
-            <th>Reward Item</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="menuTableBody">
-          <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading menu items...</td></tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Prep Time</th>
+              <th>Reward Item</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="menuTableBody">
+            <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading menu items...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- TAB 3: CATEGORIES MANAGEMENT -->
     <div id="categoryTab" class="tab-content">
       <div style="max-width: 600px; margin-bottom: 2rem;">
-        <h3 style="margin-bottom: 1rem;">Add New Category</h3>
-        <form id="addCategoryForm" style="display: flex; gap: 1rem;">
-          <input type="text" id="categoryNameInput" class="form-control" placeholder="e.g. Snacks & Drinks" required>
+        <h3 style="margin-bottom: 1rem; font-size: 1.2rem; font-weight: 800; color: var(--text-main);">Add New Category</h3>
+        <form id="addCategoryForm" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <input type="text" id="categoryNameInput" class="form-control" placeholder="e.g. Snacks & Drinks" required style="flex: 1; min-width: 220px;">
           <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Add Category</button>
         </form>
       </div>
 
-      <h3>Existing Categories</h3>
-      <table class="data-table" style="max-width: 600px;">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Category Name</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="categoryTableBody">
-          <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading categories...</td></tr>
-        </tbody>
-      </table>
+      <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">Existing Categories</h3>
+      <div class="table-responsive" style="max-width: 600px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Category Name</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="categoryTableBody">
+            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading categories...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- TAB 4: USER MANAGEMENT -->
     <div id="usersTab" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3>System Users & Staff Accounts</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">System Users & Staff Accounts</h3>
         <button onclick="openUserModal()" class="btn btn-primary">+ Create Staff Account</button>
       </div>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Daily Spending Limit</th>
-            <th>Loyalty Points</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="usersTableBody">
-          <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading users...</td></tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Daily Spending Limit</th>
+              <th>Loyalty Points</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <!-- MENU ITEM MODAL -->
   <div id="menuModal" class="modal-overlay">
     <div class="modal-content">
-      <h2 id="modalTitle" style="margin-bottom: 1.5rem;">Add Menu Item</h2>
+      <h2 id="modalTitle" style="margin-bottom: 1.5rem; font-weight: 800; color: var(--text-main);">Add Menu Item</h2>
       <form id="menuItemForm">
         <input type="hidden" id="editItemId">
 
@@ -339,14 +388,14 @@
           <input type="url" id="itemPhoto" class="form-control" placeholder="https://images.unsplash.com/...">
         </div>
 
-        <div style="background: rgba(15,23,42,0.6); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
-          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 500;">
+        <div style="background: var(--bg-card-subtle); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 600;">
             <input type="checkbox" id="isRewardEligible" onchange="toggleRewardPointsInput()">
             Can be redeemed with Loyalty Points
           </label>
           
           <div id="pointsInputGroup" style="display: none; margin-top: 0.8rem;">
-            <label for="pointsRequired" style="font-size: 0.85rem;">Points Required for Free Redemption</label>
+            <label for="pointsRequired" style="font-size: 0.85rem; font-weight: 600;">Points Required for Free Redemption</label>
             <input type="number" id="pointsRequired" class="form-control" min="1" placeholder="3">
           </div>
         </div>
@@ -362,7 +411,7 @@
   <!-- USER MODAL (Create / Edit Staff) -->
   <div id="userModal" class="modal-overlay">
     <div class="modal-content">
-      <h2 id="userModalTitle" style="margin-bottom: 1.5rem;">Create Staff Account</h2>
+      <h2 id="userModalTitle" style="margin-bottom: 1.5rem; font-weight: 800; color: var(--text-main);">Create Staff Account</h2>
       <form id="userForm">
         <input type="hidden" id="editUserId">
 
@@ -482,10 +531,10 @@
       }
       tbody.innerHTML = items.map(i => `
         <tr>
-          <td style="font-weight: 600;">${i.item_name}</td>
-          <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-main);">${i.category_name || 'General'}</span></td>
+          <td style="font-weight: 700; color: var(--text-main);">${i.item_name}</td>
+          <td><span class="badge" style="background: var(--bg-card-subtle); color: var(--text-main); border: 1px solid var(--border-color);">${i.category_name || 'General'}</span></td>
           <td style="font-weight: 700; color: var(--primary);">${i.total_quantity} units</td>
-          <td style="color: var(--success); font-weight: 700;">$${parseFloat(i.total_revenue).toFixed(2)}</td>
+          <td style="color: var(--success); font-weight: 800;">$${parseFloat(i.total_revenue).toFixed(2)}</td>
         </tr>
       `).join('');
     }
@@ -498,9 +547,9 @@
       }
       tbody.innerHTML = hours.map(h => `
         <tr>
-          <td style="font-weight: 600; color: var(--accent);">⏰ ${h.formatted_hour}</td>
+          <td style="font-weight: 700; color: var(--primary);">⏰ ${h.formatted_hour}</td>
           <td style="font-weight: 700;">${h.order_count} order(s)</td>
-          <td style="color: var(--primary); font-weight: 700;">$${parseFloat(h.total_sales).toFixed(2)}</td>
+          <td style="color: var(--success); font-weight: 800;">$${parseFloat(h.total_sales).toFixed(2)}</td>
         </tr>
       `).join('');
     }
@@ -513,11 +562,11 @@
       }
       tbody.innerHTML = orders.map(o => `
         <tr>
-          <td style="font-weight: 700; color: var(--primary);">#${o.order_id}</td>
-          <td style="font-weight: 600;">${o.customer_name}</td>
+          <td style="font-weight: 800; color: var(--primary);">#${o.order_id}</td>
+          <td style="font-weight: 700;">${o.customer_name}</td>
           <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(o.order_time).toLocaleString()}</td>
-          <td style="font-size: 0.85rem; color: var(--accent);">${new Date(o.pickup_time).toLocaleString()}</td>
-          <td style="font-weight: 700;">$${parseFloat(o.total_amount).toFixed(2)}</td>
+          <td style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">${new Date(o.pickup_time).toLocaleString()}</td>
+          <td style="font-weight: 800;">$${parseFloat(o.total_amount).toFixed(2)}</td>
           <td><span class="badge badge-customer">${o.status.toUpperCase()}</span></td>
         </tr>
       `).join('');
@@ -546,11 +595,11 @@
       tbody.innerHTML = globalUsers.map(u => `
         <tr>
           <td>${u.user_id}</td>
-          <td style="font-weight: 600;">${u.name}</td>
+          <td style="font-weight: 700; color: var(--text-main);">${u.name}</td>
           <td>${u.email}</td>
           <td><span class="badge badge-${u.role}">${u.role.toUpperCase()}</span></td>
           <td style="font-weight: 700; color: var(--success);">$${parseFloat(u.daily_limit).toFixed(2)}</td>
-          <td style="color: var(--primary); font-weight: 700;">${u.loyalty_points} pts</td>
+          <td style="color: var(--primary); font-weight: 800;">${u.loyalty_points} pts</td>
           <td>
             <button onclick='editUser(${JSON.stringify(u).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
           </td>
@@ -663,7 +712,7 @@
       tbody.innerHTML = globalCategories.map(c => `
         <tr>
           <td>${c.category_id}</td>
-          <td style="font-weight: 600;">${c.name}</td>
+          <td style="font-weight: 700; color: var(--text-main);">${c.name}</td>
           <td>
             <button onclick="deleteCategory(${c.category_id})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Delete</button>
           </td>
@@ -744,11 +793,11 @@
           <td>
             <img src="${item.photo_url || 'https://via.placeholder.com/48?text=Food'}" class="item-img-preview" alt="${item.name}">
           </td>
-          <td style="font-weight: 600;">${item.name}</td>
-          <td><span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-main);">${item.category_name || 'Unassigned'}</span></td>
-          <td style="color: var(--primary); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</td>
+          <td style="font-weight: 700; color: var(--text-main);">${item.name}</td>
+          <td><span class="badge" style="background: var(--bg-card-subtle); color: var(--text-main); border: 1px solid var(--border-color);">${item.category_name || 'Unassigned'}</span></td>
+          <td style="color: var(--primary); font-weight: 800;">$${parseFloat(item.price).toFixed(2)}</td>
           <td>⏱️ ${item.wait_time_minutes} mins</td>
-          <td>${item.is_reward_eligible ? `<span style="color: var(--success); font-weight: 600;">🎁 ${item.points_required} pts</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
+          <td>${item.is_reward_eligible ? `<span style="color: var(--success); font-weight: 700;">🎁 ${item.points_required} pts</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
           <td>
             <button onclick="toggleActiveStatus(${item.item_id})" class="btn ${item.is_active ? 'btn-outline' : 'btn-danger'}" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">
               ${item.is_active ? '✅ Active' : '❌ Inactive'}
@@ -875,3 +924,4 @@
   </script>
 </body>
 </html>
+
