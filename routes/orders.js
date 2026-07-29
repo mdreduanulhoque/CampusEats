@@ -78,7 +78,7 @@ router.post('/', requireRole('customer'), async (req, res) => {
 
     for (const cartItem of items) {
       const [itemRows] = await connection.query(
-        'SELECT item_id, name, price, points_required, is_reward_eligible, is_active FROM MenuItems WHERE item_id = ?',
+        'SELECT item_id, canteen_id, name, price, points_required, is_reward_eligible, is_active FROM MenuItems WHERE item_id = ?',
         [cartItem.item_id]
       );
 
@@ -107,6 +107,7 @@ router.post('/', requireRole('customer'), async (req, res) => {
 
       verifiedOrderItems.push({
         item_id: menuItem.item_id,
+        canteen_id: menuItem.canteen_id || 1,
         name: menuItem.name,
         quantity,
         unit_price: unitPrice,
@@ -114,6 +115,9 @@ router.post('/', requireRole('customer'), async (req, res) => {
         is_free_reward: isFreeReward
       });
     }
+
+    // Determine order canteen_id (from first item)
+    const orderCanteenId = verifiedOrderItems.length > 0 ? (verifiedOrderItems[0].canteen_id || 1) : 1;
 
     // Check if customer has enough loyalty points for redemptions
     if (totalPointsNeeded > 0 && currentPoints < totalPointsNeeded) {
@@ -160,12 +164,13 @@ router.post('/', requireRole('customer'), async (req, res) => {
     // 4. Insert Order
     const formattedPickupTime = pickupDate.toISOString().slice(0, 19).replace('T', ' ');
     const [orderResult] = await connection.query(
-      `INSERT INTO Orders (user_id, total_amount, status, payment_method, payment_status, pickup_time)
-       VALUES (?, ?, 'pending', 'cash_on_pickup', 'unpaid', ?)`,
-      [userId, calculatedTotal, formattedPickupTime]
+      `INSERT INTO Orders (user_id, canteen_id, total_amount, status, payment_method, payment_status, pickup_time)
+       VALUES (?, ?, ?, 'pending', 'cash_on_pickup', 'unpaid', ?)`,
+      [userId, orderCanteenId, calculatedTotal, formattedPickupTime]
     );
 
     const orderId = orderResult.insertId;
+
 
     // 5. Insert Order Items
     for (const verifiedItem of verifiedOrderItems) {

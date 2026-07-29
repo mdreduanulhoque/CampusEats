@@ -4,8 +4,144 @@ const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
+const multer = require('multer');
+const { uploadImageToSupabase } = require('../config/supabase');
+
 // Apply admin protection to all routes in this router
 router.use(verifyToken, requireRole('admin'));
+
+// Configure Multer for in-memory file handling
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  }
+});
+
+// --- SUPABASE IMAGE UPLOAD ENDPOINT ---
+router.post('/upload-image', (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ status: 'error', message: err.message || 'File upload error.' });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: 'error', message: 'Please select an image file to upload.' });
+    }
+
+    const publicUrl = await uploadImageToSupabase(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    res.json({
+      status: 'success',
+      message: 'Image uploaded to Supabase Storage successfully!',
+      public_url: publicUrl
+    });
+  } catch (error) {
+    console.error('Image upload endpoint error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message || 'Failed to upload image to Supabase Storage.'
+    });
+  }
+});
+
+
+// --- CANTEENS MANAGEMENT ---
+
+// 1. Get all canteens
+router.get('/canteens', async (req, res) => {
+  try {
+    const [canteens] = await db.query(`
+      SELECT c.*, u.name AS owner_name, u.email AS owner_email
+      FROM Canteens c
+      LEFT JOIN Users u ON c.owner_user_id = u.user_id
+      ORDER BY c.canteen_id ASC
+    `);
+    res.json({ status: 'success', canteens });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Failed to fetch canteens.', error: error.message });
+  }
+});
+
+// 2. Create new canteen
+router.post('/canteens', async (req, res) => {
+  const { name, description, owner_user_id } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ status: 'error', message: 'Canteen name is required.' });
+  }
+
+  try {
+    const parsedOwnerId = owner_user_id ? parseInt(owner_user_id) : null;
+    const [result] = await db.query(
+      'INSERT INTO Canteens (name, description, owner_user_id) VALUES (?, ?, ?)',
+      [name.trim(), description ? description.trim() : '', parsedOwnerId]
+    );
+
+    // If owner_user_id is provided, also set their user record canteen_id
+    if (parsedOwnerId) {
+      await db.query('UPDATE Users SET canteen_id = ? WHERE user_id = ?', [result.insertId, parsedOwnerId]);
+    }
+
+    res.status(201).json({
+      status: 'success',
+      message: `Canteen "${name.trim()}" created successfully.`,
+      canteen_id: result.insertId
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Failed to create canteen.', error: error.message });
+  }
+});
+
+// 3. Update canteen
+router.put('/canteens/:id', async (req, res) => {
+  const canteenId = req.params.id;
+  const { name, description, owner_user_id, is_active } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ status: 'error', message: 'Canteen name is required.' });
+  }
+
+  try {
+    const parsedOwnerId = owner_user_id ? parseInt(owner_user_id) : null;
+    const parsedIsActive = is_active !== undefined ? (is_active ? 1 : 0) : 1;
+
+    await db.query(
+      'UPDATE Canteens SET name = ?, description = ?, owner_user_id = ?, is_active = ? WHERE canteen_id = ?',
+      [name.trim(), description ? description.trim() : '', parsedOwnerId, parsedIsActive, canteenId]
+    );
+
+    if (parsedOwnerId) {
+      await db.query('UPDATE Users SET canteen_id = ? WHERE user_id = ?', [canteenId, parsedOwnerId]);
+    }
+
+    res.json({ status: 'success', message: 'Canteen updated successfully.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Failed to update canteen.', error: error.message });
+  }
+});
+
+// 4. Delete canteen
+router.delete('/canteens/:id', async (req, res) => {
+  try {
+    await db.query('DELETE FROM Canteens WHERE canteen_id = ?', [req.params.id]);
+    res.json({ status: 'success', message: 'Canteen deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Failed to delete canteen.', error: error.message });
+  }
+});
+
 
 // --- CATEGORIES ---
 
@@ -58,9 +194,10 @@ router.delete('/categories/:id', async (req, res) => {
 router.get('/menu', async (req, res) => {
   try {
     const [items] = await db.query(`
-      SELECT m.*, c.name AS category_name
+      SELECT m.*, c.name AS category_name, k.name AS canteen_name
       FROM MenuItems m
       LEFT JOIN Categories c ON m.category_id = c.category_id
+      LEFT JOIN Canteens k ON m.canteen_id = k.canteen_id
       ORDER BY m.item_id DESC
     `);
     res.json({ status: 'success', items });
@@ -73,6 +210,7 @@ router.get('/menu', async (req, res) => {
 router.post('/menu', async (req, res) => {
   const {
     category_id,
+    canteen_id,
     name,
     description,
     price,
@@ -89,6 +227,7 @@ router.post('/menu', async (req, res) => {
 
   try {
     const parsedCategoryId = category_id ? parseInt(category_id) : null;
+    const parsedCanteenId = canteen_id ? parseInt(canteen_id) : 1;
     const parsedPrice = parseFloat(price);
     const parsedWaitTime = wait_time_minutes ? parseInt(wait_time_minutes) : 15;
     const parsedRewardEligible = is_reward_eligible ? 1 : 0;
@@ -97,10 +236,11 @@ router.post('/menu', async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO MenuItems 
-       (category_id, name, description, price, photo_url, wait_time_minutes, is_reward_eligible, points_required, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (category_id, canteen_id, name, description, price, photo_url, wait_time_minutes, is_reward_eligible, points_required, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         parsedCategoryId,
+        parsedCanteenId,
         name.trim(),
         description ? description.trim() : '',
         parsedPrice,
@@ -127,6 +267,7 @@ router.put('/menu/:id', async (req, res) => {
   const itemId = req.params.id;
   const {
     category_id,
+    canteen_id,
     name,
     description,
     price,
@@ -143,6 +284,7 @@ router.put('/menu/:id', async (req, res) => {
 
   try {
     const parsedCategoryId = category_id ? parseInt(category_id) : null;
+    const parsedCanteenId = canteen_id ? parseInt(canteen_id) : 1;
     const parsedPrice = parseFloat(price);
     const parsedWaitTime = wait_time_minutes ? parseInt(wait_time_minutes) : 15;
     const parsedRewardEligible = is_reward_eligible ? 1 : 0;
@@ -151,11 +293,12 @@ router.put('/menu/:id', async (req, res) => {
 
     await db.query(
       `UPDATE MenuItems SET
-       category_id = ?, name = ?, description = ?, price = ?, photo_url = ?,
+       category_id = ?, canteen_id = ?, name = ?, description = ?, price = ?, photo_url = ?,
        wait_time_minutes = ?, is_reward_eligible = ?, points_required = ?, is_active = ?
        WHERE item_id = ?`,
       [
         parsedCategoryId,
+        parsedCanteenId,
         name.trim(),
         description ? description.trim() : '',
         parsedPrice,
@@ -201,9 +344,12 @@ router.delete('/menu/:id', async (req, res) => {
 // 1. Get all system users
 router.get('/users', async (req, res) => {
   try {
-    const [users] = await db.query(
-      'SELECT user_id, name, email, role, loyalty_points, daily_limit, created_at FROM Users ORDER BY user_id DESC'
-    );
+    const [users] = await db.query(`
+      SELECT u.user_id, u.name, u.email, u.role, u.canteen_id, c.name AS canteen_name, u.loyalty_points, u.daily_limit, u.created_at
+      FROM Users u
+      LEFT JOIN Canteens c ON u.canteen_id = c.canteen_id
+      ORDER BY u.user_id DESC
+    `);
     res.json({ status: 'success', users });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Failed to fetch users.', error: error.message });
@@ -212,7 +358,7 @@ router.get('/users', async (req, res) => {
 
 // 2. Create staff / admin / customer user
 router.post('/users', async (req, res) => {
-  const { name, email, password, role, daily_limit } = req.body;
+  const { name, email, password, role, canteen_id, daily_limit } = req.body;
 
   if (!name || !email || !password || !role) {
     return res.status(400).json({ status: 'error', message: 'Name, email, password, and role are required.' });
@@ -231,10 +377,11 @@ router.post('/users', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
     const parsedDailyLimit = parseFloat(daily_limit) || 0.00;
+    const parsedCanteenId = canteen_id ? parseInt(canteen_id) : null;
 
     const [result] = await db.query(
-      'INSERT INTO Users (name, email, password_hash, role, loyalty_points, daily_limit) VALUES (?, ?, ?, ?, 0, ?)',
-      [name.trim(), email.trim().toLowerCase(), password_hash, role, parsedDailyLimit]
+      'INSERT INTO Users (name, email, password_hash, role, canteen_id, loyalty_points, daily_limit) VALUES (?, ?, ?, ?, ?, 0, ?)',
+      [name.trim(), email.trim().toLowerCase(), password_hash, role, parsedCanteenId, parsedDailyLimit]
     );
 
     res.status(201).json({
@@ -247,10 +394,10 @@ router.post('/users', async (req, res) => {
   }
 });
 
-// 3. Update user details (daily limit, role, name)
+// 3. Update user details (daily limit, role, name, canteen_id)
 router.put('/users/:id', async (req, res) => {
   const userId = req.params.id;
-  const { name, role, daily_limit } = req.body;
+  const { name, role, canteen_id, daily_limit } = req.body;
 
   if (!name || !role) {
     return res.status(400).json({ status: 'error', message: 'Name and role are required.' });
@@ -258,10 +405,11 @@ router.put('/users/:id', async (req, res) => {
 
   try {
     const parsedDailyLimit = parseFloat(daily_limit) || 0.00;
+    const parsedCanteenId = canteen_id ? parseInt(canteen_id) : null;
 
     await db.query(
-      'UPDATE Users SET name = ?, role = ?, daily_limit = ? WHERE user_id = ?',
-      [name.trim(), role, parsedDailyLimit, userId]
+      'UPDATE Users SET name = ?, role = ?, canteen_id = ?, daily_limit = ? WHERE user_id = ?',
+      [name.trim(), role, parsedCanteenId, parsedDailyLimit, userId]
     );
 
     res.json({ status: 'success', message: 'User details updated successfully.' });
@@ -274,21 +422,26 @@ router.put('/users/:id', async (req, res) => {
 // --- SALES ANALYTICS & REPORTS ---
 
 router.get('/analytics', async (req, res) => {
-  const { start_date, end_date } = req.query;
+  const { start_date, end_date, canteen_id } = req.query;
 
   try {
     let dateFilter = '';
     const dateParams = [];
 
     if (start_date && end_date) {
-      dateFilter = ' AND DATE(o.order_time) BETWEEN ? AND ?';
+      dateFilter += ' AND DATE(o.order_time) BETWEEN ? AND ?';
       dateParams.push(start_date, end_date);
     } else if (start_date) {
-      dateFilter = ' AND DATE(o.order_time) >= ?';
+      dateFilter += ' AND DATE(o.order_time) >= ?';
       dateParams.push(start_date);
     } else if (end_date) {
-      dateFilter = ' AND DATE(o.order_time) <= ?';
+      dateFilter += ' AND DATE(o.order_time) <= ?';
       dateParams.push(end_date);
+    }
+
+    if (canteen_id && canteen_id !== 'all') {
+      dateFilter += ' AND o.canteen_id = ?';
+      dateParams.push(parseInt(canteen_id));
     }
 
     // 1. Total Revenue from Picked Up Paid Orders
@@ -317,13 +470,14 @@ router.get('/analytics', async (req, res) => {
 
     // 4. Best Selling Menu Items
     const [bestSellers] = await db.query(
-      `SELECT m.name AS item_name, c.name AS category_name,
+      `SELECT m.name AS item_name, c.name AS category_name, k.name AS canteen_name,
               SUM(oi.quantity) AS total_quantity,
               SUM(oi.subtotal) AS total_revenue
        FROM OrderItems oi
        JOIN Orders o ON oi.order_id = o.order_id
        JOIN MenuItems m ON oi.item_id = m.item_id
        LEFT JOIN Categories c ON m.category_id = c.category_id
+       LEFT JOIN Canteens k ON m.canteen_id = k.canteen_id
        WHERE o.status = 'picked_up'` + dateFilter + `
        GROUP BY m.item_id
        ORDER BY total_quantity DESC
@@ -346,9 +500,10 @@ router.get('/analytics', async (req, res) => {
 
     // 6. Recent Orders Activity Log
     const [recentOrders] = await db.query(
-      `SELECT o.*, u.name AS customer_name
+      `SELECT o.*, u.name AS customer_name, k.name AS canteen_name
        FROM Orders o
        JOIN Users u ON o.user_id = u.user_id
+       LEFT JOIN Canteens k ON o.canteen_id = k.canteen_id
        WHERE 1=1` + dateFilter + `
        ORDER BY o.order_id DESC
        LIMIT 10`,
@@ -375,5 +530,6 @@ router.get('/analytics', async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Failed to fetch sales analytics.', error: error.message });
   }
 });
+
 
 module.exports = router;

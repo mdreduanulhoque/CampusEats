@@ -127,3 +127,26 @@ Create SQL aggregation endpoints filterable by date range:
 2. **Polling Check:** Verify the kitchen dashboard auto-updates smoothly every 10 seconds without page reloads.
 
 <!-- PRODUCT_CARD:6166_doc -->
+
+## New 4 requirement
+## Phase 1: Database Setup & Supabase Migration:
+
+Canteens schema created, foreign key canteen_id linked across Users, MenuItems, and Orders, default canteens seeded, photo_url extended to VARCHAR(500).
+## Phase 2: Supabase Storage Image Upload:
+
+Integrated POST /api/admin/upload-image endpoint using multer to stream image file buffers directly to Supabase bucket canteen-images.
+Admin Menu Item Modal auto-populates returned public Supabase URL into #itemPhoto with live image preview.
+## Phase 3: Multi-Kitchen & Canteen Management:
+
+Admin Dashboard: Added 🏪 Canteens tab for canteen CRUD and staff assignment, Canteen / Kitchen dropdown in Menu Item modal, and Canteen filter in Sales Analytics.
+Kitchen Staff Portal: Scoped live order queue by req.user.canteen_id, displaying assigned canteen header title badge and order card badges.
+Customer Portal: Added 🏪 Select Campus Canteen filter pills (#canteenPills) and canteen location badges on food cards.
+Phase 4: Side-by-Side Item Comparison Feature:
+
+Built GET /api/menu/compare?ids=1,2,3 and GET /api/menu/similar/:id APIs for multi-item and cross-canteen similar item lookups.
+Created ⚖️ Compare buttons on food cards, 1-click ⚖️ Compare Similar overlay button, sticky Floating Compare Drawer (#compareFloatingBar), and Side-by-Side Modal (#compareModal) highlighting the 🏷️ Best Price and ⚡ Fastest Prep options.
+## Phase 5: Customer Mobile Responsiveness & UI Polish:
+
+Enforced text/box overflow protection (overflow-wrap: break-word) across all cards, modals, and tables.
+Enabled touch horizontal scrolling for filter pills (.category-pills).
+Configured responsive 1-column card grid layout on mobile viewports (< 768px) and re-aligned floating drawer position above mobile bottom nav.

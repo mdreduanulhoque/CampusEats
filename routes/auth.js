@@ -66,7 +66,14 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const [users] = await db.query('SELECT * FROM Users WHERE email = ?', [email.trim().toLowerCase()]);
+    const [users] = await db.query(
+      `SELECT u.*, c.name AS canteen_name 
+       FROM Users u 
+       LEFT JOIN Canteens c ON u.canteen_id = c.canteen_id 
+       WHERE u.email = ?`,
+      [email.trim().toLowerCase()]
+    );
+
     if (users.length === 0) {
       return res.status(401).json({ status: 'error', message: 'Invalid email or password.' });
     }
@@ -83,7 +90,9 @@ router.post('/login', async (req, res) => {
       user_id: user.user_id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      canteen_id: user.canteen_id,
+      canteen_name: user.canteen_name
     };
 
     const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: '24h' });
@@ -97,6 +106,8 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        canteen_id: user.canteen_id,
+        canteen_name: user.canteen_name,
         loyalty_points: user.loyalty_points,
         daily_limit: user.daily_limit
       }
@@ -111,7 +122,10 @@ router.post('/login', async (req, res) => {
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT user_id, name, email, role, loyalty_points, daily_limit, created_at FROM Users WHERE user_id = ?',
+      `SELECT u.user_id, u.name, u.email, u.role, u.canteen_id, c.name AS canteen_name, u.loyalty_points, u.daily_limit, u.created_at 
+       FROM Users u 
+       LEFT JOIN Canteens c ON u.canteen_id = c.canteen_id 
+       WHERE u.user_id = ?`,
       [req.user.user_id]
     );
 
@@ -127,5 +141,6 @@ router.get('/me', verifyToken, async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Failed to fetch user info.', error: error.message });
   }
 });
+
 
 module.exports = router;

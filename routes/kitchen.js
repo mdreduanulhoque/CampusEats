@@ -6,18 +6,28 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 // All kitchen routes require kitchen or admin role
 router.use(verifyToken, requireRole('kitchen', 'admin'));
 
-// 1. Get incoming kitchen orders sorted by newest first (order_id DESC), filterable by status and date
+// 1. Get incoming kitchen orders sorted by newest first (order_id DESC), filterable by status, date, and canteen
 router.get('/orders', async (req, res) => {
-  const { status, date } = req.query;
+  const { status, date, canteen_id } = req.query;
 
   try {
     let query = `
-      SELECT o.*, u.name AS customer_name, u.email AS customer_email, u.loyalty_points AS customer_points
+      SELECT o.*, u.name AS customer_name, u.email AS customer_email, u.loyalty_points AS customer_points, k.name AS canteen_name
       FROM Orders o
       JOIN Users u ON o.user_id = u.user_id
+      LEFT JOIN Canteens k ON o.canteen_id = k.canteen_id
       WHERE 1=1
     `;
     const queryParams = [];
+
+    // Scope to specific canteen if user is kitchen staff or if query param provided
+    if (req.user.role === 'kitchen' && req.user.canteen_id) {
+      query += ` AND o.canteen_id = ?`;
+      queryParams.push(req.user.canteen_id);
+    } else if (canteen_id && canteen_id !== 'all') {
+      query += ` AND o.canteen_id = ?`;
+      queryParams.push(parseInt(canteen_id));
+    }
 
     if (status && status !== 'all') {
       query += ` AND o.status = ?`;
@@ -32,6 +42,7 @@ router.get('/orders', async (req, res) => {
     query += ` ORDER BY o.order_id DESC, o.order_time DESC`;
 
     const [orders] = await db.query(query, queryParams);
+
 
     if (orders.length === 0) {
       return res.json({ status: 'success', orders: [] });

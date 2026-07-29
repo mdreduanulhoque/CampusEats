@@ -160,6 +160,7 @@
     <!-- Tabs Navigation -->
     <div class="admin-tabs">
       <button class="tab-btn active" onclick="switchTab('analyticsTab', this)">📊 Sales Analytics</button>
+      <button class="tab-btn" onclick="switchTab('canteensTab', this)">🏪 Canteens</button>
       <button class="tab-btn" onclick="switchTab('menuTab', this)">🍔 Menu Catalog</button>
       <button class="tab-btn" onclick="switchTab('categoryTab', this)">📁 Categories</button>
       <button class="tab-btn" onclick="switchTab('usersTab', this)">👥 User Management</button>
@@ -180,6 +181,12 @@
           <div>
             <label style="font-size: 0.82rem; color: var(--text-main); font-weight: 700; display: block; margin-bottom: 0.25rem;">End Date</label>
             <input type="date" id="endDateFilter" class="form-control" style="padding: 0.45rem 0.85rem; font-size: 0.9rem; width: auto;">
+          </div>
+          <div>
+            <label style="font-size: 0.82rem; color: var(--text-main); font-weight: 700; display: block; margin-bottom: 0.25rem;">Canteen Filter</label>
+            <select id="canteenAnalyticsFilter" class="form-control" onchange="loadAnalyticsData()" style="padding: 0.45rem 0.85rem; font-size: 0.9rem; width: auto;">
+              <option value="all">All Canteens</option>
+            </select>
           </div>
           <button onclick="loadAnalyticsData()" class="btn btn-primary" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">Filter Reports</button>
           <button onclick="resetAnalyticsFilter()" class="btn btn-outline" style="padding: 0.5rem 1.1rem; font-size: 0.9rem;">Reset</button>
@@ -264,6 +271,31 @@
       </div>
     </div>
 
+    <!-- TAB 1.5: CANTEENS MANAGEMENT -->
+    <div id="canteensTab" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">Campus Canteens & Kitchens</h3>
+        <button onclick="openCanteenModal()" class="btn btn-primary">+ Create New Canteen</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Canteen Name</th>
+              <th>Description</th>
+              <th>Assigned Kitchen Manager</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="canteensTableBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Loading canteens...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- TAB 2: MENU CATALOG MANAGEMENT -->
     <div id="menuTab" class="tab-content">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
@@ -277,6 +309,7 @@
             <tr>
               <th>Photo</th>
               <th>Item Name</th>
+              <th>Canteen</th>
               <th>Category</th>
               <th>Price</th>
               <th>Prep Time</th>
@@ -334,6 +367,7 @@
               <th>Full Name</th>
               <th>Email</th>
               <th>Role</th>
+              <th>Assigned Canteen</th>
               <th>Daily Spending Limit</th>
               <th>Loyalty Points</th>
               <th>Action</th>
@@ -357,6 +391,13 @@
         <div class="form-group">
           <label for="itemName">Item Name *</label>
           <input type="text" id="itemName" class="form-control" required placeholder="e.g. Chicken Rice">
+        </div>
+
+        <div class="form-group">
+          <label for="itemCanteen">Canteen / Kitchen *</label>
+          <select id="itemCanteen" class="form-control" required>
+            <option value="">-- Select Canteen --</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -384,9 +425,25 @@
         </div>
 
         <div class="form-group">
-          <label for="itemPhoto">Photo URL</label>
-          <input type="url" id="itemPhoto" class="form-control" placeholder="https://images.unsplash.com/...">
+          <label style="font-weight: 700;">Item Image</label>
+          
+          <!-- Supabase Bucket File Uploader -->
+          <div style="background: var(--bg-card-subtle); padding: 0.9rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 0.6rem;">
+            <label for="itemImageFile" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">
+              📤 Upload Image File to Supabase Bucket:
+            </label>
+            <input type="file" id="itemImageFile" accept="image/*" class="form-control" onchange="handleSupabaseImageUpload(this)" style="padding: 0.4rem;">
+            <div id="imageUploadStatus" style="font-size: 0.8rem; margin-top: 0.4rem; font-weight: 600;"></div>
+          </div>
+
+          <label for="itemPhoto" style="font-size: 0.82rem; color: var(--text-muted);">Direct Public Image URL (Auto-filled upon upload)</label>
+          <input type="url" id="itemPhoto" class="form-control" placeholder="https://..." oninput="updateImagePreview(this.value)">
+          
+          <div id="imagePreviewContainer" style="margin-top: 0.6rem; display: none; text-align: center;">
+            <img id="imagePreviewElement" src="" alt="Preview" style="max-height: 140px; border-radius: 8px; border: 1px solid var(--border-color); object-fit: cover;">
+          </div>
         </div>
+
 
         <div style="background: var(--bg-card-subtle); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 600;">
@@ -446,9 +503,48 @@
           </div>
         </div>
 
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="userFormCanteen">Assigned Canteen / Kitchen</label>
+          <select id="userFormCanteen" class="form-control">
+            <option value="">-- None / All --</option>
+          </select>
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
           <button type="button" onclick="closeUserModal()" class="btn btn-outline">Cancel</button>
           <button type="submit" class="btn btn-primary">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CANTEEN MODAL -->
+  <div id="canteenModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="canteenModalTitle" style="margin-bottom: 1.5rem; font-weight: 800; color: var(--text-main);">Add Canteen</h2>
+      <form id="canteenForm">
+        <input type="hidden" id="editCanteenId">
+
+        <div class="form-group">
+          <label for="canteenName">Canteen / Kitchen Name *</label>
+          <input type="text" id="canteenName" class="form-control" required placeholder="e.g. North Wing Bistro">
+        </div>
+
+        <div class="form-group">
+          <label for="canteenDescription">Description</label>
+          <textarea id="canteenDescription" class="form-control" rows="2" placeholder="Canteen location, specialty, or dining notes..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="canteenOwner">Assigned Kitchen Manager / Staff</label>
+          <select id="canteenOwner" class="form-control">
+            <option value="">-- Unassigned --</option>
+          </select>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" onclick="closeCanteenModal()" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Canteen</button>
         </div>
       </form>
     </div>
@@ -468,6 +564,7 @@
     let globalCategories = [];
     let globalMenuItems = [];
     let globalUsers = [];
+    let globalCanteens = [];
 
     function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -476,6 +573,7 @@
       btn.classList.add('active');
 
       if (tabId === 'analyticsTab') loadAnalyticsData();
+      if (tabId === 'canteensTab') loadCanteens();
       if (tabId === 'usersTab') loadUsers();
     }
 
@@ -491,11 +589,13 @@
     async function loadAnalyticsData() {
       const start = document.getElementById('startDateFilter').value;
       const end = document.getElementById('endDateFilter').value;
+      const canteenId = document.getElementById('canteenAnalyticsFilter') ? document.getElementById('canteenAnalyticsFilter').value : 'all';
 
       let url = '/api/admin/analytics';
       const params = [];
       if (start) params.push(`start_date=${start}`);
       if (end) params.push(`end_date=${end}`);
+      if (canteenId && canteenId !== 'all') params.push(`canteen_id=${canteenId}`);
       if (params.length > 0) url += '?' + params.join('&');
 
       try {
@@ -521,6 +621,139 @@
       document.getElementById('startDateFilter').value = '';
       document.getElementById('endDateFilter').value = '';
       loadAnalyticsData();
+    }
+
+    // --- CANTEENS MANAGEMENT FUNCTIONS ---
+    async function loadCanteens() {
+      try {
+        const res = await fetch('/api/admin/canteens', {
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          globalCanteens = data.canteens;
+          renderCanteensTable();
+          updateCanteenDropdowns();
+        }
+      } catch (err) { console.error('Load canteens error:', err); }
+    }
+
+    function renderCanteensTable() {
+      const tbody = document.getElementById('canteensTableBody');
+      if (globalCanteens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No canteens found.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = globalCanteens.map(c => `
+        <tr>
+          <td>${c.canteen_id}</td>
+          <td style="font-weight: 800; color: var(--primary);">🏪 ${c.name}</td>
+          <td>${c.description || '-'}</td>
+          <td>${c.owner_name ? `👤 <strong>${c.owner_name}</strong> (${c.owner_email})` : '<span style="color:var(--text-muted);">Unassigned</span>'}</td>
+          <td>
+            <button onclick='editCanteen(${JSON.stringify(c).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-right: 0.3rem;">Edit</button>
+            <button onclick="deleteCanteen(${c.canteen_id})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function updateCanteenDropdowns() {
+      const menuSelect = document.getElementById('itemCanteen');
+      if (menuSelect) {
+        menuSelect.innerHTML = '<option value="">-- Select Canteen --</option>' +
+          globalCanteens.map(c => `<option value="${c.canteen_id}">${c.name}</option>`).join('');
+      }
+
+      const analyticsSelect = document.getElementById('canteenAnalyticsFilter');
+      if (analyticsSelect) {
+        const currVal = analyticsSelect.value;
+        analyticsSelect.innerHTML = '<option value="all">All Canteens</option>' +
+          globalCanteens.map(c => `<option value="${c.canteen_id}">${c.name}</option>`).join('');
+        analyticsSelect.value = currVal || 'all';
+      }
+
+      const userCanteenSelect = document.getElementById('canteenOwner');
+      if (userCanteenSelect) {
+        const kitchenStaff = globalUsers.filter(u => u.role === 'kitchen');
+        userCanteenSelect.innerHTML = '<option value="">-- Unassigned --</option>' +
+          kitchenStaff.map(u => `<option value="${u.user_id}">${u.name} (${u.email})</option>`).join('');
+      }
+    }
+
+    function openCanteenModal(canteen = null) {
+      document.getElementById('canteenForm').reset();
+      document.getElementById('editCanteenId').value = '';
+      updateCanteenDropdowns();
+
+      if (canteen) {
+        document.getElementById('canteenModalTitle').textContent = 'Edit Canteen';
+        document.getElementById('editCanteenId').value = canteen.canteen_id;
+        document.getElementById('canteenName').value = canteen.name;
+        document.getElementById('canteenDescription').value = canteen.description || '';
+        document.getElementById('canteenOwner').value = canteen.owner_user_id || '';
+      } else {
+        document.getElementById('canteenModalTitle').textContent = 'Add New Canteen';
+      }
+
+      document.getElementById('canteenModal').style.display = 'flex';
+    }
+
+    function editCanteen(canteen) {
+      openCanteenModal(canteen);
+    }
+
+    function closeCanteenModal() {
+      document.getElementById('canteenModal').style.display = 'none';
+    }
+
+    document.getElementById('canteenForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const canteenId = document.getElementById('editCanteenId').value;
+      const name = document.getElementById('canteenName').value.trim();
+      const description = document.getElementById('canteenDescription').value.trim();
+      const owner_user_id = document.getElementById('canteenOwner').value || null;
+
+      const method = canteenId ? 'PUT' : 'POST';
+      const url = canteenId ? `/api/admin/canteens/${canteenId}` : '/api/admin/canteens';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: JSON.stringify({ name, description, owner_user_id })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showAlert(canteenId ? 'Canteen updated successfully!' : 'Canteen created successfully!');
+          closeCanteenModal();
+          loadCanteens();
+          loadMenuItems();
+        } else {
+          showAlert(data.message, false);
+        }
+      } catch (err) { showAlert('Failed to save canteen.', false); }
+    });
+
+    async function deleteCanteen(id) {
+      if (!confirm('Are you sure you want to delete this canteen?')) return;
+      try {
+        const res = await fetch(`/api/admin/canteens/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showAlert('Canteen deleted.');
+          loadCanteens();
+          loadMenuItems();
+        } else {
+          showAlert(data.message, false);
+        }
+      } catch (err) { showAlert('Failed to delete canteen.', false); }
     }
 
     function renderBestSellersTable(items) {
@@ -589,7 +822,7 @@
     function renderUsersTable() {
       const tbody = document.getElementById('usersTableBody');
       if (globalUsers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No users found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No users found.</td></tr>`;
         return;
       }
       tbody.innerHTML = globalUsers.map(u => `
@@ -598,6 +831,7 @@
           <td style="font-weight: 700; color: var(--text-main);">${u.name}</td>
           <td>${u.email}</td>
           <td><span class="badge badge-${u.role}">${u.role.toUpperCase()}</span></td>
+          <td><span class="badge badge-kitchen">🏪 ${u.canteen_name || 'Central Campus Canteen'}</span></td>
           <td style="font-weight: 700; color: var(--success);">$${parseFloat(u.daily_limit).toFixed(2)}</td>
           <td style="color: var(--primary); font-weight: 800;">${u.loyalty_points} pts</td>
           <td>
@@ -611,6 +845,12 @@
       document.getElementById('userForm').reset();
       document.getElementById('editUserId').value = '';
 
+      const userCanteenSelect = document.getElementById('userFormCanteen');
+      if (userCanteenSelect) {
+        userCanteenSelect.innerHTML = '<option value="">-- None / All --</option>' +
+          globalCanteens.map(c => `<option value="${c.canteen_id}">${c.name}</option>`).join('');
+      }
+
       if (user) {
         document.getElementById('userModalTitle').textContent = 'Edit User Account';
         document.getElementById('editUserId').value = user.user_id;
@@ -619,6 +859,7 @@
         document.getElementById('userFormEmail').disabled = true;
         document.getElementById('userFormRole').value = user.role;
         document.getElementById('userFormLimit').value = user.daily_limit;
+        if (userCanteenSelect) userCanteenSelect.value = user.canteen_id || '';
         document.getElementById('passwordGroup').style.display = 'none';
         document.getElementById('userFormPassword').required = false;
       } else {
@@ -645,6 +886,7 @@
       const name = document.getElementById('userFormName').value.trim();
       const role = document.getElementById('userFormRole').value;
       const daily_limit = document.getElementById('userFormLimit').value;
+      const canteen_id = document.getElementById('userFormCanteen').value || null;
 
       if (userId) {
         // Edit User
@@ -655,7 +897,7 @@
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${Auth.getToken()}`
             },
-            body: JSON.stringify({ name, role, daily_limit })
+            body: JSON.stringify({ name, role, daily_limit, canteen_id })
           });
           const data = await res.json();
           if (data.status === 'success') {
@@ -676,7 +918,7 @@
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${Auth.getToken()}`
             },
-            body: JSON.stringify({ name, email, password, role, daily_limit })
+            body: JSON.stringify({ name, email, password, role, daily_limit, canteen_id })
           });
           const data = await res.json();
           if (data.status === 'success') {
@@ -794,6 +1036,7 @@
             <img src="${item.photo_url || 'https://via.placeholder.com/48?text=Food'}" class="item-img-preview" alt="${item.name}">
           </td>
           <td style="font-weight: 700; color: var(--text-main);">${item.name}</td>
+          <td><span class="badge badge-kitchen">🏪 ${item.canteen_name || 'Central Canteen'}</span></td>
           <td><span class="badge" style="background: var(--bg-card-subtle); color: var(--text-main); border: 1px solid var(--border-color);">${item.category_name || 'Unassigned'}</span></td>
           <td style="color: var(--primary); font-weight: 800;">$${parseFloat(item.price).toFixed(2)}</td>
           <td>⏱️ ${item.wait_time_minutes} mins</td>
@@ -811,6 +1054,54 @@
       `).join('');
     }
 
+    async function handleSupabaseImageUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('imageUploadStatus');
+      statusEl.style.color = 'var(--primary)';
+      statusEl.textContent = '⏳ Uploading image to Supabase Bucket...';
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const res = await fetch('/api/admin/upload-image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Auth.getToken()}`
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+        if (data.status === 'success') {
+          document.getElementById('itemPhoto').value = data.public_url;
+          statusEl.style.color = 'var(--success)';
+          statusEl.textContent = '✅ Uploaded to Supabase Bucket!';
+          updateImagePreview(data.public_url);
+        } else {
+          statusEl.style.color = 'var(--danger)';
+          statusEl.textContent = `❌ Upload failed: ${data.message}`;
+        }
+      } catch (err) {
+        console.error('Image upload error:', err);
+        statusEl.style.color = 'var(--danger)';
+        statusEl.textContent = '❌ Failed to upload image to Supabase.';
+      }
+    }
+
+    function updateImagePreview(url) {
+      const container = document.getElementById('imagePreviewContainer');
+      const img = document.getElementById('imagePreviewElement');
+      if (url && url.trim()) {
+        img.src = url.trim();
+        container.style.display = 'block';
+      } else {
+        container.style.display = 'none';
+      }
+    }
+
     function toggleRewardPointsInput() {
       const isChecked = document.getElementById('isRewardEligible').checked;
       document.getElementById('pointsInputGroup').style.display = isChecked ? 'block' : 'none';
@@ -820,11 +1111,17 @@
       document.getElementById('menuItemForm').reset();
       document.getElementById('editItemId').value = '';
       document.getElementById('pointsInputGroup').style.display = 'none';
+      
+      const fileInput = document.getElementById('itemImageFile');
+      if (fileInput) fileInput.value = '';
+      const statusEl = document.getElementById('imageUploadStatus');
+      if (statusEl) statusEl.textContent = '';
 
       if (item) {
         document.getElementById('modalTitle').textContent = 'Edit Menu Item';
         document.getElementById('editItemId').value = item.item_id;
         document.getElementById('itemName').value = item.name;
+        document.getElementById('itemCanteen').value = item.canteen_id || 1;
         document.getElementById('itemCategory').value = item.category_id || '';
         document.getElementById('itemDescription').value = item.description || '';
         document.getElementById('itemPrice').value = item.price;
@@ -835,12 +1132,16 @@
           document.getElementById('pointsInputGroup').style.display = 'block';
           document.getElementById('pointsRequired').value = item.points_required || '';
         }
+        updateImagePreview(item.photo_url);
       } else {
         document.getElementById('modalTitle').textContent = 'Add Menu Item';
+        document.getElementById('itemCanteen').value = globalCanteens.length > 0 ? globalCanteens[0].canteen_id : 1;
+        updateImagePreview('');
       }
 
       document.getElementById('menuModal').style.display = 'flex';
     }
+
 
     function editMenuItem(item) {
       openMenuModal(item);
@@ -856,6 +1157,7 @@
 
       const payload = {
         name: document.getElementById('itemName').value.trim(),
+        canteen_id: document.getElementById('itemCanteen').value || 1,
         category_id: document.getElementById('itemCategory').value || null,
         description: document.getElementById('itemDescription').value.trim(),
         price: document.getElementById('itemPrice').value,
@@ -918,6 +1220,7 @@
     }
 
     // Initial loads
+    loadCanteens();
     loadAnalyticsData();
     loadCategories();
     loadMenuItems();

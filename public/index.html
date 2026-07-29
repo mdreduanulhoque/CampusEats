@@ -307,14 +307,28 @@
 
     <!-- TAB 1: MENU CATALOG -->
     <div id="catalogTab" class="tab-content active">
-      <div class="menu-header">
-        <div class="category-pills" id="categoryPills">
-          <button class="pill-btn active" onclick="filterCategory('all', this)">All Items</button>
+      <div class="menu-header" style="flex-direction: column; align-items: stretch;">
+        <!-- Canteen Filter Pills -->
+        <div style="margin-bottom: 0.6rem;">
+          <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 700; margin-bottom: 0.3rem;">🏪 Select Campus Canteen:</div>
+          <div class="category-pills" id="canteenPills">
+            <button class="pill-btn active" onclick="filterCanteen('all', this)">All Canteens</button>
+          </div>
         </div>
 
-        <div style="position: relative; width: 260px;">
-          <input type="text" id="searchInput" class="form-control" placeholder="Search menu..." onkeyup="handleSearch()" style="padding-left: 2.4rem;">
-          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+        <!-- Category Filter Pills & Search Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 700; margin-bottom: 0.3rem;">🍔 Food Category:</div>
+            <div class="category-pills" id="categoryPills">
+              <button class="pill-btn active" onclick="filterCategory('all', this)">All Items</button>
+            </div>
+          </div>
+
+          <div style="position: relative; width: 260px; margin-top: 1rem;">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search menu..." onkeyup="handleSearch()" style="padding-left: 2.4rem;">
+            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+          </div>
         </div>
       </div>
 
@@ -442,6 +456,35 @@
     </div>
   </div>
 
+  <!-- SIDE-BY-SIDE COMPARE MODAL -->
+  <div id="compareModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 960px; width: 95%; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem;">
+        <div>
+          <h2 style="font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem; font-size: 1.4rem;">⚖️ Side-by-Side Canteen Item Comparison</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Compare pricing, wait times, canteen options, and ratings side-by-side.</p>
+        </div>
+        <button onclick="closeCompareModal()" class="btn btn-outline" style="padding: 0.35rem 0.8rem;">✕ Close</button>
+      </div>
+
+      <div id="compareTableContainer" style="overflow-x: auto;">
+        <div style="text-align: center; color: var(--text-muted); padding: 3rem;">Loading comparison data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING COMPARE BAR -->
+  <div id="compareFloatingBar" style="position: fixed; bottom: 85px; right: 24px; background: var(--bg-card); border: 2px solid var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.18); border-radius: 12px; padding: 0.75rem 1.2rem; display: none; align-items: center; gap: 1rem; z-index: 999; backdrop-filter: blur(10px);">
+    <div>
+      <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;" id="compareCountLabel">⚖️ 0 Items Selected</span>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">Select up to 4 items to compare</div>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button onclick="openCompareModal()" class="btn btn-primary" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">Compare Now</button>
+      <button onclick="clearCompareSelection()" class="btn btn-outline" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">Clear</button>
+    </div>
+  </div>
+
   <!-- STICKY MOBILE BOTTOM NAVBAR -->
   <nav class="mobile-bottom-nav">
     <a href="#" onclick="switchMainTab('catalogTab', document.querySelectorAll('.tab-btn')[0]); return false;" class="mobile-nav-item active">
@@ -478,8 +521,11 @@
     let userTodaySpent = 0.00;
     let userLoyaltyPoints = 0;
     let allCategories = [];
+    let allCanteens = [];
     let allMenuItems = [];
     let activeCategory = 'all';
+    let activeCanteen = 'all';
+    let selectedCompareIds = [];
 
     function switchMainTab(tabId, btn) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -517,14 +563,33 @@
 
     async function loadCatalogData() {
       try {
-        const catRes = await fetch('/api/menu/categories');
+        const [catRes, cantRes] = await Promise.all([
+          fetch('/api/menu/categories'),
+          fetch('/api/menu/canteens')
+        ]);
         const catData = await catRes.json();
+        const cantData = await cantRes.json();
+
         if (catData.status === 'success') {
           allCategories = catData.categories;
           renderCategoryPills();
         }
+        if (cantData.status === 'success') {
+          allCanteens = cantData.canteens;
+          renderCanteenPills();
+        }
         await fetchMenuItems();
       } catch (err) { console.error(err); }
+    }
+
+    function renderCanteenPills() {
+      const container = document.getElementById('canteenPills');
+      if (!container) return;
+      container.innerHTML = `
+        <button class="pill-btn ${activeCanteen === 'all' ? 'active' : ''}" onclick="filterCanteen('all', this)">All Canteens</button>
+      ` + allCanteens.map(c => `
+        <button class="pill-btn ${activeCanteen == c.canteen_id ? 'active' : ''}" onclick="filterCanteen(${c.canteen_id}, this)">🏪 ${c.name}</button>
+      `).join('');
     }
 
     function renderCategoryPills() {
@@ -536,9 +601,13 @@
       `).join('');
     }
 
-    async function fetchMenuItems(catId = 'all') {
+    async function fetchMenuItems(catId = activeCategory, cantId = activeCanteen) {
       try {
-        const url = catId !== 'all' ? `/api/menu?category_id=${catId}` : '/api/menu';
+        const params = [];
+        if (catId && catId !== 'all') params.push(`category_id=${catId}`);
+        if (cantId && cantId !== 'all') params.push(`canteen_id=${cantId}`);
+        const url = params.length > 0 ? `/api/menu?${params.join('&')}` : '/api/menu';
+
         const res = await fetch(url);
         const data = await res.json();
         if (data.status === 'success') {
@@ -548,11 +617,18 @@
       } catch (err) { console.error(err); }
     }
 
+    function filterCanteen(cantId, btn) {
+      activeCanteen = cantId;
+      document.querySelectorAll('#canteenPills .pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      fetchMenuItems(activeCategory, cantId);
+    }
+
     function filterCategory(catId, btn) {
       activeCategory = catId;
-      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#categoryPills .pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      fetchMenuItems(catId);
+      fetchMenuItems(catId, activeCanteen);
     }
 
     function handleSearch() {
@@ -583,12 +659,19 @@
         const avgRatingVal = parseFloat(item.avg_rating) || 0;
         const ratingDisplay = avgRatingVal > 0 ? `${avgRatingVal.toFixed(1)} (${item.total_reviews})` : 'New';
 
+        const isCompared = selectedCompareIds.includes(item.item_id);
+
         return `
           <div class="menu-card">
             <div class="card-img-wrapper">
               <img src="${item.photo_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'}" class="card-img" alt="${item.name}">
               <div class="card-tag">${item.category_name || 'Menu'}</div>
+              <div style="position: absolute; top: 12px; right: 12px; background: rgba(30, 41, 59, 0.88); backdrop-filter: blur(6px); color: #ffffff; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">🏪 ${item.canteen_name || 'Central Canteen'}</div>
               <div class="prep-tag">⏱️ ${item.wait_time_minutes} mins prep</div>
+
+              <button onclick="quickCompareSimilar(${item.item_id})" title="Compare with similar items across canteens" style="position: absolute; bottom: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 0.25rem 0.55rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; backdrop-filter: blur(4px);">
+                ⚖️ Compare Similar
+              </button>
             </div>
 
             <div class="card-body">
@@ -614,12 +697,15 @@
 
               <div class="card-footer">
                 <div class="price-tag">$${parseFloat(item.price).toFixed(2)}</div>
-                <div style="display: flex; gap: 0.5rem;">
-                  <button onclick="viewItemDetails(${item.item_id})" class="btn btn-outline" style="padding: 0.4rem 0.7rem; font-size: 0.85rem;">Reviews</button>
+                <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                  <button onclick="toggleCompareItem(${item.item_id})" class="btn ${isCompared ? 'btn-primary' : 'btn-outline'}" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; ${isCompared ? 'background: var(--primary-dark); color: #fff;' : ''}">
+                    ${isCompared ? '✓ Compared' : '⚖️ Compare'}
+                  </button>
+                  <button onclick="viewItemDetails(${item.item_id})" class="btn btn-outline" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Reviews</button>
                   <button onclick='handleAddToCart(${JSON.stringify(item).replace(/'/g, "&apos;")})' 
                           class="btn ${isAdded ? 'btn-outline' : 'btn-primary'}" 
-                          style="padding: 0.4rem 0.9rem; font-size: 0.85rem; ${isAdded ? 'border-color: var(--secondary); color: var(--success); background: var(--success-bg);' : ''}">
-                    ${isAdded ? `✓ Added (${cartItem.quantity})` : '+ Cart'}
+                          style="padding: 0.4rem 0.8rem; font-size: 0.8rem; ${isAdded ? 'border-color: var(--secondary); color: var(--success); background: var(--success-bg);' : ''}">
+                    ${isAdded ? `✓ (${cartItem.quantity})` : '+ Cart'}
                   </button>
                 </div>
               </div>
@@ -627,6 +713,208 @@
           </div>
         `;
       }).join('');
+    }
+
+    // --- ITEM COMPARISON FUNCTIONS ---
+    function toggleCompareItem(id) {
+      const idx = selectedCompareIds.indexOf(id);
+      if (idx > -1) {
+        selectedCompareIds.splice(idx, 1);
+      } else {
+        if (selectedCompareIds.length >= 4) {
+          alert('You can compare up to 4 items at a time.');
+          return;
+        }
+        selectedCompareIds.push(id);
+      }
+      updateCompareFloatingBar();
+      renderMenuGrid(allMenuItems);
+    }
+
+    function updateCompareFloatingBar() {
+      const bar = document.getElementById('compareFloatingBar');
+      const label = document.getElementById('compareCountLabel');
+      if (selectedCompareIds.length > 0) {
+        label.textContent = `⚖️ ${selectedCompareIds.length} Item(s) Selected`;
+        bar.style.display = 'flex';
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    function clearCompareSelection() {
+      selectedCompareIds = [];
+      updateCompareFloatingBar();
+      renderMenuGrid(allMenuItems);
+    }
+
+    async function quickCompareSimilar(id) {
+      try {
+        const res = await fetch(`/api/menu/similar/${id}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          const ids = [parseInt(id)];
+          if (data.similar_items) {
+            data.similar_items.forEach(sim => {
+              if (ids.length < 4 && !ids.includes(sim.item_id)) {
+                ids.push(sim.item_id);
+              }
+            });
+          }
+          selectedCompareIds = ids;
+          updateCompareFloatingBar();
+          renderMenuGrid(allMenuItems);
+          openCompareModal();
+        }
+      } catch (err) {
+        console.error('Failed to load similar items:', err);
+      }
+    }
+
+    async function openCompareModal() {
+      if (selectedCompareIds.length === 0) {
+        alert('Please select at least one item to compare!');
+        return;
+      }
+
+      const container = document.getElementById('compareTableContainer');
+      container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 3rem;">Loading comparison data...</div>`;
+      document.getElementById('compareModal').style.display = 'flex';
+
+      try {
+        const res = await fetch(`/api/menu/compare?ids=${selectedCompareIds.join(',')}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          renderCompareTable(data.items);
+        } else {
+          container.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 2rem;">${data.message || 'Failed to load comparison.'}</div>`;
+        }
+      } catch (err) {
+        container.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 2rem;">Failed to fetch comparison data.</div>`;
+      }
+    }
+
+    function closeCompareModal() {
+      document.getElementById('compareModal').style.display = 'none';
+    }
+
+    function renderCompareTable(items) {
+      const container = document.getElementById('compareTableContainer');
+      if (!items || items.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">No items to display.</div>`;
+        return;
+      }
+
+      const minPrice = Math.min(...items.map(i => parseFloat(i.price)));
+      const minWait = Math.min(...items.map(i => parseInt(i.wait_time_minutes)));
+      const cart = Cart.getCart();
+
+      let html = `
+        <table class="data-table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+          <thead>
+            <tr>
+              <th style="width: 160px; background: var(--bg-card-subtle);">Feature</th>
+              ${items.map(item => `
+                <th style="text-align: center; min-width: 200px;">
+                  <img src="${item.photo_url || 'https://via.placeholder.com/100?text=Food'}" style="width: 100%; max-height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 0.5rem;" alt="${item.name}">
+                  <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">${item.name}</div>
+                </th>
+              `).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">🏪 Canteen / Kitchen</td>
+              ${items.map(item => `
+                <td style="text-align: center;">
+                  <span class="badge badge-kitchen" style="font-size: 0.85rem; padding: 0.3rem 0.6rem;">🏪 ${item.canteen_name || 'Central Canteen'}</span>
+                  ${item.canteen_description ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem;">${item.canteen_description}</div>` : ''}
+                </td>
+              `).join('')}
+            </tr>
+
+            <tr>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">💵 Price ($)</td>
+              ${items.map(item => {
+                const price = parseFloat(item.price);
+                const isCheapest = items.length > 1 && price === minPrice;
+                return `
+                  <td style="text-align: center;">
+                    <div style="font-size: 1.25rem; font-weight: 800; color: ${isCheapest ? 'var(--success)' : 'var(--primary)'};">
+                      $${price.toFixed(2)}
+                    </div>
+                    ${isCheapest ? `<span class="badge" style="background: var(--success-bg); color: var(--success); font-size: 0.72rem; margin-top: 0.2rem;">🏷️ Best Price</span>` : ''}
+                  </td>
+                `;
+              }).join('')}
+            </tr>
+
+            <tr>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">⏱️ Prep / Wait Time</td>
+              ${items.map(item => {
+                const wait = parseInt(item.wait_time_minutes);
+                const isFastest = items.length > 1 && wait === minWait;
+                return `
+                  <td style="text-align: center;">
+                    <div style="font-weight: 700; color: var(--text-main);">⏱️ ${wait} mins</div>
+                    ${isFastest ? `<span class="badge" style="background: rgba(2,132,199,0.12); color: #0284c7; font-size: 0.72rem; margin-top: 0.2rem;">⚡ Fastest Prep</span>` : ''}
+                  </td>
+                `;
+              }).join('')}
+            </tr>
+
+            <tr>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">⭐ Rating & Reviews</td>
+              ${items.map(item => {
+                const rating = parseFloat(item.avg_rating) || 0;
+                return `
+                  <td style="text-align: center;">
+                    <div style="color: var(--amber); font-weight: 800;">★ ${rating > 0 ? rating.toFixed(1) : 'New'}</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">${item.total_reviews} customer review(s)</div>
+                  </td>
+                `;
+              }).join('')}
+            </tr>
+
+            <tr>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">🎁 Loyalty Reward</td>
+              ${items.map(item => `
+                <td style="text-align: center;">
+                  ${item.is_reward_eligible ? `<span style="color: var(--success); font-weight: 700; font-size: 0.85rem;">🎁 ${item.points_required} pts</span>` : `<span style="color: var(--text-muted); font-size: 0.85rem;">Not eligible</span>`}
+                </td>
+              `).join('')}
+            </tr>
+
+            <tr>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">📝 Description</td>
+              ${items.map(item => `
+                <td style="font-size: 0.85rem; color: var(--text-muted); text-align: center;">
+                  ${item.description || 'No detailed description available.'}
+                </td>
+              `).join('')}
+            </tr>
+
+            <tr>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">🛒 Action</td>
+              ${items.map(item => {
+                const cartItem = cart.find(i => i.item_id === item.item_id && !i.is_free_reward);
+                const isAdded = !!cartItem;
+                return `
+                  <td style="text-align: center;">
+                    <button onclick='handleAddToCart(${JSON.stringify(item).replace(/'/g, "&apos;")})' 
+                            class="btn ${isAdded ? 'btn-outline' : 'btn-primary'}" 
+                            style="padding: 0.45rem 1rem; font-size: 0.85rem; width: 100%;">
+                      ${isAdded ? `✓ Added (${cartItem.quantity})` : '+ Add to Cart'}
+                    </button>
+                  </td>
+                `;
+              }).join('')}
+            </tr>
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = html;
     }
 
     function handleAddToCart(item) {

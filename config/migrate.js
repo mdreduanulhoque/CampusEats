@@ -1,0 +1,85 @@
+const db = require('./db');
+
+async function runMigration() {
+  console.log('🔄 Starting CampusEats Database Migration...');
+
+  try {
+    // 1. Create Canteens Table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS Canteens (
+          canteen_id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          description TEXT,
+          owner_user_id INT NULL,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (owner_user_id) REFERENCES Users(user_id) ON DELETE SET NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    console.log('✅ Table "Canteens" verified/created.');
+
+    // 2. Seed Default Canteens
+    await db.query(`
+      INSERT INTO Canteens (canteen_id, name, description) VALUES 
+      (1, 'Central Campus Canteen', 'Main campus dining hall serving fresh daily meals.'),
+      (2, 'North Wing Bistro', 'Specialty grill, beverages, and quick bites.')
+      ON DUPLICATE KEY UPDATE name=VALUES(name);
+    `);
+    console.log('✅ Default canteens seeded.');
+
+    // Helper to check if column exists
+    const columnExists = async (table, column) => {
+      const [rows] = await db.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+        [table, column]
+      );
+      return rows.length > 0;
+    };
+
+    // 3. Add canteen_id to Users
+    if (!(await columnExists('Users', 'canteen_id'))) {
+      await db.query(`ALTER TABLE Users ADD COLUMN canteen_id INT NULL`);
+      await db.query(`ALTER TABLE Users ADD CONSTRAINT fk_users_canteen FOREIGN KEY (canteen_id) REFERENCES Canteens(canteen_id) ON DELETE SET NULL`);
+      console.log('✅ Added canteen_id to "Users" table.');
+    } else {
+      console.log('ℹ️ "Users.canteen_id" column already exists.');
+    }
+
+    // 4. Add canteen_id to MenuItems
+    if (!(await columnExists('MenuItems', 'canteen_id'))) {
+      await db.query(`ALTER TABLE MenuItems ADD COLUMN canteen_id INT NULL DEFAULT 1`);
+      await db.query(`ALTER TABLE MenuItems ADD CONSTRAINT fk_menu_canteen FOREIGN KEY (canteen_id) REFERENCES Canteens(canteen_id) ON DELETE SET NULL`);
+      console.log('✅ Added canteen_id to "MenuItems" table.');
+    } else {
+      console.log('ℹ️ "MenuItems.canteen_id" column already exists.');
+    }
+
+    // 5. Add canteen_id to Orders
+    if (!(await columnExists('Orders', 'canteen_id'))) {
+      await db.query(`ALTER TABLE Orders ADD COLUMN canteen_id INT NULL DEFAULT 1`);
+      await db.query(`ALTER TABLE Orders ADD CONSTRAINT fk_orders_canteen FOREIGN KEY (canteen_id) REFERENCES Canteens(canteen_id) ON DELETE SET NULL`);
+      console.log('✅ Added canteen_id to "Orders" table.');
+    } else {
+      console.log('ℹ️ "Orders.canteen_id" column already exists.');
+    }
+
+    // 6. Modify photo_url length in MenuItems
+    await db.query(`ALTER TABLE MenuItems MODIFY photo_url VARCHAR(500)`);
+    console.log('✅ Modified "MenuItems.photo_url" length to VARCHAR(500).');
+
+    // 7. Backfill existing data
+    await db.query(`UPDATE Users SET canteen_id = 1 WHERE role = 'kitchen' AND canteen_id IS NULL`);
+    await db.query(`UPDATE MenuItems SET canteen_id = 1 WHERE canteen_id IS NULL`);
+    await db.query(`UPDATE Orders SET canteen_id = 1 WHERE canteen_id IS NULL`);
+    console.log('✅ Existing kitchen users, menu items, and orders backfilled to Canteen #1.');
+
+    console.log('🎉 Migration completed successfully!');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    process.exit(1);
+  }
+}
+
+runMigration();
