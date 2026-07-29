@@ -4,6 +4,90 @@ async function runMigration() {
   console.log('🔄 Starting CampusEats Database Migration...');
 
   try {
+    // 0. Ensure Core Base Tables Exist
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS Users (
+          user_id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          role ENUM('customer', 'kitchen', 'admin') DEFAULT 'customer',
+          loyalty_points INT DEFAULT 0,
+          daily_limit DECIMAL(10, 2) DEFAULT 0.00,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS Categories (
+          category_id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(100) UNIQUE NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS MenuItems (
+          item_id INT AUTO_INCREMENT PRIMARY KEY,
+          category_id INT NULL,
+          name VARCHAR(100) NOT NULL,
+          description TEXT,
+          price DECIMAL(10, 2) NOT NULL,
+          photo_url VARCHAR(500),
+          wait_time_minutes INT DEFAULT 15,
+          is_reward_eligible BOOLEAN DEFAULT FALSE,
+          points_required INT NULL DEFAULT NULL,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (category_id) REFERENCES Categories(category_id) ON DELETE SET NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS Orders (
+          order_id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          total_amount DECIMAL(10, 2) NOT NULL,
+          status ENUM('pending', 'accepted', 'preparing', 'ready', 'picked_up', 'rejected') DEFAULT 'pending',
+          payment_method ENUM('cash_on_pickup') DEFAULT 'cash_on_pickup',
+          payment_status ENUM('unpaid', 'paid') DEFAULT 'unpaid',
+          pickup_time DATETIME NOT NULL,
+          earned_points INT DEFAULT 0,
+          order_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+          completed_at DATETIME NULL,
+          FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS OrderItems (
+          order_item_id INT AUTO_INCREMENT PRIMARY KEY,
+          order_id INT NOT NULL,
+          item_id INT NOT NULL,
+          quantity INT NOT NULL DEFAULT 1,
+          unit_price DECIMAL(10, 2) NOT NULL,
+          subtotal DECIMAL(10, 2) NOT NULL,
+          is_free_reward BOOLEAN DEFAULT FALSE,
+          FOREIGN KEY (order_id) REFERENCES Orders(order_id) ON DELETE CASCADE,
+          FOREIGN KEY (item_id) REFERENCES MenuItems(item_id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS Reviews (
+          review_id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          item_id INT NOT NULL,
+          rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+          comment TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+          FOREIGN KEY (item_id) REFERENCES MenuItems(item_id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    console.log('✅ Core base tables verified/created.');
+
     // 1. Create Canteens Table
     await db.query(`
       CREATE TABLE IF NOT EXISTS Canteens (

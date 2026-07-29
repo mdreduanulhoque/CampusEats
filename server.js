@@ -68,8 +68,19 @@ app.get('*', (req, res) => {
   });
 });
 
-app.listen(PORT, async () => {
-  console.log(`🚀 CampusEats Server running on http://localhost:${PORT}`);
-  // Synchronize seed user passwords on startup
-  await seedDefaultUsers();
-});
+if (require.main === module) {
+  app.listen(PORT, async () => {
+    console.log(`🚀 CampusEats Server running on http://localhost:${PORT}`);
+    // Synchronize seed user passwords on startup
+    await seedDefaultUsers();
+  });
+}
+
+try {
+  const { onRequest } = require('firebase-functions/v2/https');
+  exports.api = onRequest({ maxInstances: 10 }, app);
+} catch (e) {
+  // Ignored in standard node runtime if firebase-functions not invoked
+}
+
+module.exports = app;
