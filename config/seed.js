@@ -31,6 +31,35 @@ async function seedDefaultUsers() {
       }
     }
 
+    // Seed default categories if empty
+    const [catCount] = await db.query('SELECT COUNT(*) AS total FROM Categories');
+    if (catCount[0].total === 0) {
+      await db.query(`
+        INSERT INTO Categories (category_id, name) VALUES
+        (1, 'Main Dishes'),
+        (2, 'Snacks & Sides'),
+        (3, 'Beverages'),
+        (4, 'Desserts')
+        ON DUPLICATE KEY UPDATE name=VALUES(name);
+      `);
+      console.log('✅ Default categories seeded.');
+    }
+
+    // Seed default menu items if empty
+    const [itemCount] = await db.query('SELECT COUNT(*) AS total FROM MenuItems');
+    if (itemCount[0].total === 0) {
+      await db.query(`
+        INSERT INTO MenuItems (item_id, category_id, canteen_id, name, description, price, photo_url, wait_time_minutes, is_reward_eligible, points_required, is_active) VALUES
+        (1, 1, 1, 'Grilled Chicken Rice', 'Tender grilled chicken served with seasoned rice and fresh veggies.', 8.50, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80', 15, FALSE, NULL, TRUE),
+        (2, 1, 1, 'Beef Burger & Fries', 'Juicy beef patty topped with cheese, lettuce, and secret sauce.', 7.00, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80', 12, FALSE, NULL, TRUE),
+        (3, 2, 1, 'Crispy French Fries', 'Golden fried potato fries salted to perfection.', 3.00, 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=500&q=80', 8, TRUE, 3, TRUE),
+        (4, 3, 1, 'Iced Lemon Tea', 'Refreshing brewed tea with fresh lemon slices.', 2.50, 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=500&q=80', 5, TRUE, 2, TRUE),
+        (5, 4, 1, 'Chocolate Muffin', 'Rich chocolate chip muffin baked fresh daily.', 3.50, 'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?auto=format&fit=crop&w=500&q=80', 5, TRUE, 3, TRUE)
+        ON DUPLICATE KEY UPDATE name=VALUES(name);
+      `);
+      console.log('🍔 Default menu items seeded.');
+    }
+
     // Seed sample customer reviews for menu items if Reviews table has < 3 reviews
     const [reviewCount] = await db.query('SELECT COUNT(*) AS total FROM Reviews');
     if (reviewCount[0].total < 3) {

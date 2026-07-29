@@ -158,6 +158,11 @@ async function runMigration() {
     await db.query(`UPDATE Orders SET canteen_id = 1 WHERE canteen_id IS NULL`);
     console.log('✅ Existing kitchen users, menu items, and orders backfilled to Canteen #1.');
 
+    // 8. Seed default users, categories, menu items, and reviews
+    const seedDefaultUsers = require('./seed');
+    await seedDefaultUsers();
+    console.log('⭐ Default seed data & menu catalog populated successfully.');
+
     console.log('🎉 Migration completed successfully!');
     process.exit(0);
   } catch (error) {
