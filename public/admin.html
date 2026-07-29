@@ -197,7 +197,7 @@
       <div class="stat-cards-grid">
         <div class="stat-card">
           <div class="stat-title">💰 Total Paid Sales Revenue</div>
-          <div class="stat-value" style="color: var(--success);" id="totalSalesVal">$0.00</div>
+          <div class="stat-value" style="color: var(--success);" id="totalSalesVal">৳0.00</div>
         </div>
         <div class="stat-card">
           <div class="stat-title">✅ Picked-Up Orders</div>
@@ -414,7 +414,7 @@
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
-            <label for="itemPrice">Price ($) *</label>
+            <label for="itemPrice">Price (৳) *</label>
             <input type="number" id="itemPrice" class="form-control" step="0.25" min="0" required placeholder="7.50">
           </div>
 
@@ -498,7 +498,7 @@
           </div>
 
           <div class="form-group">
-            <label for="userFormLimit">Daily Limit ($)</label>
+            <label for="userFormLimit">Daily Limit (৳)</label>
             <input type="number" id="userFormLimit" class="form-control" step="0.50" min="0" value="0.00">
           </div>
         </div>
@@ -606,7 +606,7 @@
 
         if (data.status === 'success') {
           const a = data.analytics;
-          document.getElementById('totalSalesVal').textContent = `$${a.total_sales.toFixed(2)}`;
+          document.getElementById('totalSalesVal').textContent = `৳${a.total_sales.toFixed(2)}`;
           document.getElementById('pickedUpVal').textContent = a.picked_up_count;
           document.getElementById('totalOrdersVal').textContent = a.total_orders;
 
@@ -767,7 +767,7 @@
           <td style="font-weight: 700; color: var(--text-main);">${i.item_name}</td>
           <td><span class="badge" style="background: var(--bg-card-subtle); color: var(--text-main); border: 1px solid var(--border-color);">${i.category_name || 'General'}</span></td>
           <td style="font-weight: 700; color: var(--primary);">${i.total_quantity} units</td>
-          <td style="color: var(--success); font-weight: 800;">$${parseFloat(i.total_revenue).toFixed(2)}</td>
+          <td style="color: var(--success); font-weight: 800;">৳${parseFloat(i.total_revenue).toFixed(2)}</td>
         </tr>
       `).join('');
     }
@@ -782,7 +782,7 @@
         <tr>
           <td style="font-weight: 700; color: var(--primary);">⏰ ${h.formatted_hour}</td>
           <td style="font-weight: 700;">${h.order_count} order(s)</td>
-          <td style="color: var(--success); font-weight: 800;">$${parseFloat(h.total_sales).toFixed(2)}</td>
+          <td style="color: var(--success); font-weight: 800;">৳${parseFloat(h.total_sales).toFixed(2)}</td>
         </tr>
       `).join('');
     }
@@ -799,7 +799,7 @@
           <td style="font-weight: 700;">${o.customer_name}</td>
           <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(o.order_time).toLocaleString()}</td>
           <td style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">${new Date(o.pickup_time).toLocaleString()}</td>
-          <td style="font-weight: 800;">$${parseFloat(o.total_amount).toFixed(2)}</td>
+          <td style="font-weight: 800;">৳${parseFloat(o.total_amount).toFixed(2)}</td>
           <td><span class="badge badge-customer">${o.status.toUpperCase()}</span></td>
         </tr>
       `).join('');
@@ -832,7 +832,7 @@
           <td>${u.email}</td>
           <td><span class="badge badge-${u.role}">${u.role.toUpperCase()}</span></td>
           <td><span class="badge badge-kitchen">🏪 ${u.canteen_name || 'Central Campus Canteen'}</span></td>
-          <td style="font-weight: 700; color: var(--success);">$${parseFloat(u.daily_limit).toFixed(2)}</td>
+          <td style="font-weight: 700; color: var(--success);">৳${parseFloat(u.daily_limit).toFixed(2)}</td>
           <td style="color: var(--primary); font-weight: 800;">${u.loyalty_points} pts</td>
           <td>
             <button onclick='editUser(${JSON.stringify(u).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
@@ -1038,7 +1038,7 @@
           <td style="font-weight: 700; color: var(--text-main);">${item.name}</td>
           <td><span class="badge badge-kitchen">🏪 ${item.canteen_name || 'Central Canteen'}</span></td>
           <td><span class="badge" style="background: var(--bg-card-subtle); color: var(--text-main); border: 1px solid var(--border-color);">${item.category_name || 'Unassigned'}</span></td>
-          <td style="color: var(--primary); font-weight: 800;">$${parseFloat(item.price).toFixed(2)}</td>
+          <td style="color: var(--primary); font-weight: 800;">৳${parseFloat(item.price).toFixed(2)}</td>
           <td>⏱️ ${item.wait_time_minutes} mins</td>
           <td>${item.is_reward_eligible ? `<span style="color: var(--success); font-weight: 700;">🎁 ${item.points_required} pts</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
           <td>

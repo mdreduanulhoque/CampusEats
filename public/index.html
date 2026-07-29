@@ -286,12 +286,12 @@
 
         <div style="background: var(--success-bg); padding: 0.8rem 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-color-sage);">
           <div style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Daily Limit</div>
-          <div style="font-size: 1.35rem; font-weight: 800; color: var(--success);" id="dailyLimit">$0.00</div>
+          <div style="font-size: 1.35rem; font-weight: 800; color: var(--success);" id="dailyLimit">৳0.00</div>
         </div>
 
         <div style="background: rgba(253, 192, 134, 0.2); padding: 0.8rem 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--accent);">
           <div style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Spent Today</div>
-          <div style="font-size: 1.35rem; font-weight: 800; color: var(--primary);" id="spentToday">$0.00</div>
+          <div style="font-size: 1.35rem; font-weight: 800; color: var(--primary);" id="spentToday">৳0.00</div>
         </div>
       </div>
     </div>
@@ -380,11 +380,11 @@
       <div style="background: var(--bg-main); padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.9rem;">
           <span>Subtotal:</span>
-          <span id="cartSubtotal" style="font-weight: 700;">$0.00</span>
+          <span id="cartSubtotal" style="font-weight: 700;">৳0.00</span>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: var(--text-main);">
           <span>Total (Cash on Pickup):</span>
-          <span id="cartTotal" style="color: var(--primary);">$0.00</span>
+          <span id="cartTotal" style="color: var(--primary);">৳0.00</span>
         </div>
       </div>
 
@@ -555,8 +555,8 @@
           userTodaySpent = parseFloat(data.today_spent);
           userLoyaltyPoints = parseInt(data.loyalty_points) || 0;
           document.getElementById('loyaltyPoints').textContent = `${userLoyaltyPoints} pts`;
-          document.getElementById('dailyLimit').textContent = `$${userDailyLimit.toFixed(2)}`;
-          document.getElementById('spentToday').textContent = `$${userTodaySpent.toFixed(2)}`;
+          document.getElementById('dailyLimit').textContent = `৳${userDailyLimit.toFixed(2)}`;
+          document.getElementById('spentToday').textContent = `৳${userTodaySpent.toFixed(2)}`;
         }
       } catch (err) { console.error(err); }
     }
@@ -696,7 +696,7 @@
               ` : ''}
 
               <div class="card-footer">
-                <div class="price-tag">$${parseFloat(item.price).toFixed(2)}</div>
+                <div class="price-tag">৳${parseFloat(item.price).toFixed(2)}</div>
                 <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
                   <button onclick="toggleCompareItem(${item.item_id})" class="btn ${isCompared ? 'btn-primary' : 'btn-outline'}" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; ${isCompared ? 'background: var(--primary-dark); color: #fff;' : ''}">
                     ${isCompared ? '✓ Compared' : '⚖️ Compare'}
@@ -834,14 +834,14 @@
             </tr>
 
             <tr>
-              <td style="font-weight: 700; background: var(--bg-card-subtle);">💵 Price ($)</td>
+              <td style="font-weight: 700; background: var(--bg-card-subtle);">💵 Price (৳)</td>
               ${items.map(item => {
                 const price = parseFloat(item.price);
                 const isCheapest = items.length > 1 && price === minPrice;
                 return `
                   <td style="text-align: center;">
                     <div style="font-size: 1.25rem; font-weight: 800; color: ${isCheapest ? 'var(--success)' : 'var(--primary)'};">
-                      $${price.toFixed(2)}
+                      ৳${price.toFixed(2)}
                     </div>
                     ${isCheapest ? `<span class="badge" style="background: var(--success-bg); color: var(--success); font-size: 0.72rem; margin-top: 0.2rem;">🏷️ Best Price</span>` : ''}
                   </td>
@@ -974,8 +974,8 @@
 
       if (cart.length === 0) {
         listContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">Your cart is empty. Add some delicious meals!</div>`;
-        document.getElementById('cartSubtotal').textContent = '$0.00';
-        document.getElementById('cartTotal').textContent = '$0.00';
+        document.getElementById('cartSubtotal').textContent = '৳0.00';
+        document.getElementById('cartTotal').textContent = '৳0.00';
         checkoutBtn.disabled = true;
         return;
       }
@@ -988,7 +988,7 @@
               ${item.is_free_reward ? '<span class="badge badge-customer">FREE REWARD</span>' : ''}
             </div>
             <div style="font-size: 0.85rem; color: var(--primary); font-weight: 700;">
-              ${item.is_free_reward ? `🎁 ${item.points_required} Points Each` : `$${parseFloat(item.price).toFixed(2)} each`}
+              ${item.is_free_reward ? `🎁 ${item.points_required} Points Each` : `৳${parseFloat(item.price).toFixed(2)} each`}
             </div>
           </div>
 
@@ -999,7 +999,7 @@
           </div>
 
           <div style="font-weight: 700; min-width: 65px; text-align: right;">
-            ${item.is_free_reward ? '$0.00' : `$${(parseFloat(item.price) * item.quantity).toFixed(2)}`}
+            ${item.is_free_reward ? '৳0.00' : `৳${(parseFloat(item.price) * item.quantity).toFixed(2)}`}
           </div>
 
           <button onclick="removeItemFromCart(${item.item_id}, ${item.is_free_reward})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0.2rem 0.4rem; margin-left: 0.6rem;" title="Remove item">🗑️</button>
@@ -1009,8 +1009,8 @@
       const total = Cart.getCartTotal();
       const pointsTotal = Cart.getPointsTotal();
 
-      document.getElementById('cartSubtotal').textContent = `$${total.toFixed(2)}`;
-      document.getElementById('cartTotal').textContent = pointsTotal > 0 ? `$${total.toFixed(2)} + ${pointsTotal} pts` : `$${total.toFixed(2)}`;
+      document.getElementById('cartSubtotal').textContent = `৳${total.toFixed(2)}`;
+      document.getElementById('cartTotal').textContent = pointsTotal > 0 ? `৳${total.toFixed(2)} + ${pointsTotal} pts` : `৳${total.toFixed(2)}`;
 
       // Check Loyalty Points availability
       if (pointsTotal > userLoyaltyPoints) {
@@ -1025,7 +1025,7 @@
       if (userDailyLimit > 0) {
         const potentialTotal = userTodaySpent + total;
         if (potentialTotal > userDailyLimit) {
-          alertContainer.innerHTML = `⚠️ <strong>Daily Limit Exceeded!</strong><br>Your daily limit is <strong>$${userDailyLimit.toFixed(2)}</strong>. You spent $${userTodaySpent.toFixed(2)} today. This order ($${total.toFixed(2)}) brings total to $${potentialTotal.toFixed(2)}.`;
+          alertContainer.innerHTML = `⚠️ <strong>Daily Limit Exceeded!</strong><br>Your daily limit is <strong>৳${userDailyLimit.toFixed(2)}</strong>. You spent ৳${userTodaySpent.toFixed(2)} today. This order (৳${total.toFixed(2)}) brings total to ৳${potentialTotal.toFixed(2)}.`;
           alertContainer.style.display = 'block';
           checkoutBtn.disabled = true;
           checkoutBtn.style.opacity = '0.5';
@@ -1151,7 +1151,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 0.3rem 0;">
                       <span>${item.quantity}x ${item.item_name} ${item.is_free_reward ? '<span style="color: var(--success); font-size: 0.75rem;">(Free Reward)</span>' : ''}</span>
                       <div style="display: flex; align-items: center; gap: 0.8rem;">
-                        <span>$${parseFloat(item.subtotal).toFixed(2)}</span>
+                        <span>৳${parseFloat(item.subtotal).toFixed(2)}</span>
                         ${isPickedUp ? `
                           <button onclick="openReviewModalForOrder(${item.item_id}, '${item.item_name.replace(/'/g, "\\'")}')" class="btn btn-outline" style="padding: 0.25rem 0.55rem; font-size: 0.78rem; color: #d97706; border-color: #fcd34d;">⭐ Rate</button>
                         ` : ''}
@@ -1163,7 +1163,7 @@
                 <!-- Footer & Action Buttons -->
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                   <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">
-                    Total: $${parseFloat(order.total_amount).toFixed(2)}
+                    Total: ৳${parseFloat(order.total_amount).toFixed(2)}
                   </div>
 
                   <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -1227,7 +1227,7 @@
           ${(order.items || []).map(i => `
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.3rem;">
               <span>${i.quantity}x ${i.item_name || i.name} ${i.is_free_reward ? '(Free Reward)' : ''}</span>
-              <span>$${parseFloat(i.subtotal || 0).toFixed(2)}</span>
+              <span>৳${parseFloat(i.subtotal || 0).toFixed(2)}</span>
             </div>
           `).join('')}
         </div>
@@ -1314,7 +1314,7 @@
           document.getElementById('modalItemDetails').innerHTML = `
             <img src="${item.photo_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80'}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem;">
             <h2>${item.name}</h2>
-            <div style="color: var(--primary); font-size: 1.4rem; font-weight: 700; margin: 0.3rem 0;">$${parseFloat(item.price).toFixed(2)}</div>
+            <div style="color: var(--primary); font-size: 1.4rem; font-weight: 700; margin: 0.3rem 0;">৳${parseFloat(item.price).toFixed(2)}</div>
             <p style="color: var(--text-muted); margin-bottom: 1rem;">${item.description || 'No description available.'}</p>
             
             <div style="display: flex; gap: 1rem; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">

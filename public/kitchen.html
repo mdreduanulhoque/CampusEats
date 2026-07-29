@@ -280,16 +280,16 @@
               ${order.items.map(item => `
                 <div class="item-row">
                   <span><strong>${item.quantity}x</strong> ${item.item_name}</span>
-                  <span style="color: var(--text-muted); font-weight: 600;">$${parseFloat(item.subtotal).toFixed(2)}</span>
+                  <span style="color: var(--text-muted); font-weight: 600;">৳${parseFloat(item.subtotal).toFixed(2)}</span>
                 </div>
               `).join('')}
             </div>
 
             <!-- Order Summary Footer -->
             <div class="order-footer">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-                <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Total Cash Due:</span>
-                <span style="font-size: 1.35rem; font-weight: 800; color: var(--primary);">$${parseFloat(order.total_amount).toFixed(2)}</span>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Total Amount</span>
+                <span style="font-size: 1.35rem; font-weight: 800; color: var(--primary);">৳${parseFloat(order.total_amount).toFixed(2)}</span>
               </div>
 
               <!-- Status Action Buttons -->

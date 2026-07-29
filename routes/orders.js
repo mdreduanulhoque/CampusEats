@@ -148,7 +148,7 @@ router.post('/', requireRole('customer'), async (req, res) => {
         connection.release();
         return res.status(400).json({
           status: 'error',
-          message: `Daily spending limit exceeded! Limit: $${dailyLimit.toFixed(2)}. Spent today: $${todaySpent.toFixed(2)}. Order total: $${calculatedTotal.toFixed(2)}.`
+          message: `Daily spending limit exceeded! Limit: ৳${dailyLimit.toFixed(2)}. Spent today: ৳${todaySpent.toFixed(2)}. Order total: ৳${calculatedTotal.toFixed(2)}.`
         });
       }
     }
