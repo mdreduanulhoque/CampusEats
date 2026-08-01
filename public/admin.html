@@ -651,7 +651,7 @@
           <td>${c.description || '-'}</td>
           <td>${c.owner_name ? `👤 <strong>${c.owner_name}</strong> (${c.owner_email})` : '<span style="color:var(--text-muted);">Unassigned</span>'}</td>
           <td>
-            <button onclick='editCanteen(${JSON.stringify(c).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-right: 0.3rem;">Edit</button>
+            <button onclick="editCanteen(${c.canteen_id})" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-right: 0.3rem;">Edit</button>
             <button onclick="deleteCanteen(${c.canteen_id})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Delete</button>
           </td>
         </tr>
@@ -700,7 +700,8 @@
     }
 
     function editCanteen(canteen) {
-      openCanteenModal(canteen);
+      const obj = typeof canteen === 'object' ? canteen : globalCanteens.find(c => c.canteen_id === canteen);
+      if (obj) openCanteenModal(obj);
     }
 
     function closeCanteenModal() {
@@ -835,7 +836,7 @@
           <td style="font-weight: 700; color: var(--success);">৳${parseFloat(u.daily_limit).toFixed(2)}</td>
           <td style="color: var(--primary); font-weight: 800;">${u.loyalty_points} pts</td>
           <td>
-            <button onclick='editUser(${JSON.stringify(u).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
+            <button onclick="editUser(${u.user_id})" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
           </td>
         </tr>
       `).join('');
@@ -873,7 +874,8 @@
     }
 
     function editUser(user) {
-      openUserModal(user);
+      const obj = typeof user === 'object' ? user : globalUsers.find(u => u.user_id === user);
+      if (obj) openUserModal(obj);
     }
 
     function closeUserModal() {
@@ -1047,7 +1049,7 @@
             </button>
           </td>
           <td>
-            <button onclick='editMenuItem(${JSON.stringify(item).replace(/'/g, "&apos;")})' class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-right: 0.3rem;">Edit</button>
+            <button onclick="editMenuItem(${item.item_id})" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; margin-right: 0.3rem;">Edit</button>
             <button onclick="deleteMenuItem(${item.item_id})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Delete</button>
           </td>
         </tr>
@@ -1144,7 +1146,8 @@
 
 
     function editMenuItem(item) {
-      openMenuModal(item);
+      const obj = typeof item === 'object' ? item : globalMenuItems.find(i => i.item_id === item);
+      if (obj) openMenuModal(obj);
     }
 
     function closeMenuModal() {

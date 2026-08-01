@@ -32,7 +32,10 @@ async function testConnection() {
     console.log(' Successfully connected to MySQL database: ' + (process.env.DB_NAME || 'campuseats_simple'));
     connection.release();
   } catch (error) {
-    console.error(' Database connection failed:', error.message);
+    console.error('❌ Database connection failed:', error.message);
+    if (error.code === 'ENOTFOUND') {
+      console.error(`💡 DNS Error: Cannot resolve DB_HOST "${process.env.DB_HOST}". Check your internet connection or update DB_HOST to "localhost" in .env.`);
+    }
   }
 }
 

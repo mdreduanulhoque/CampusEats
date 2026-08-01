@@ -686,7 +686,7 @@
 
               ${item.is_reward_eligible ? `
                 <div style="margin-bottom: 0.8rem;">
-                  <button onclick='handleRedeemPoints(${JSON.stringify(item).replace(/'/g, "&apos;")})' 
+                  <button onclick="handleRedeemPoints(${item.item_id})" 
                           class="btn" 
                           style="width: 100%; padding: 0.4rem 0.6rem; font-size: 0.82rem; background: var(--success-bg); color: var(--success); border: 1px solid var(--border-color-sage);"
                           ${!canRedeem && !redeemedItemInCart ? 'disabled style="opacity:0.5;"' : ''}>
@@ -702,7 +702,7 @@
                     ${isCompared ? '✓ Compared' : '⚖️ Compare'}
                   </button>
                   <button onclick="viewItemDetails(${item.item_id})" class="btn btn-outline" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;">Reviews</button>
-                  <button onclick='handleAddToCart(${JSON.stringify(item).replace(/'/g, "&apos;")})' 
+                  <button onclick="handleAddToCart(${item.item_id})" 
                           class="btn ${isAdded ? 'btn-outline' : 'btn-primary'}" 
                           style="padding: 0.4rem 0.8rem; font-size: 0.8rem; ${isAdded ? 'border-color: var(--secondary); color: var(--success); background: var(--success-bg);' : ''}">
                     ${isAdded ? `✓ (${cartItem.quantity})` : '+ Cart'}
@@ -901,7 +901,7 @@
                 const isAdded = !!cartItem;
                 return `
                   <td style="text-align: center;">
-                    <button onclick='handleAddToCart(${JSON.stringify(item).replace(/'/g, "&apos;")})' 
+                    <button onclick="handleAddToCart(${item.item_id})" 
                             class="btn ${isAdded ? 'btn-outline' : 'btn-primary'}" 
                             style="padding: 0.45rem 1rem; font-size: 0.85rem; width: 100%;">
                       ${isAdded ? `✓ Added (${cartItem.quantity})` : '+ Add to Cart'}
@@ -917,13 +917,17 @@
       container.innerHTML = html;
     }
 
-    function handleAddToCart(item) {
+    function handleAddToCart(itemOrId) {
+      const item = typeof itemOrId === 'object' ? itemOrId : allMenuItems.find(i => i.item_id === itemOrId);
+      if (!item) return;
       Cart.addToCart(item, false);
       updateCartBadge();
       renderMenuGrid(allMenuItems);
     }
 
-    function handleRedeemPoints(item) {
+    function handleRedeemPoints(itemOrId) {
+      const item = typeof itemOrId === 'object' ? itemOrId : allMenuItems.find(i => i.item_id === itemOrId);
+      if (!item) return;
       if (userLoyaltyPoints < item.points_required) {
         alert(`You need ${item.points_required} loyalty points to redeem this item. You have ${userLoyaltyPoints} points.`);
         return;
@@ -1234,7 +1238,7 @@
 
         <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; border-top: 1px solid var(--border-color); padding-top: 0.6rem; color: var(--primary);">
           <span>Total Amount:</span>
-          <span>$${parseFloat(order.total_amount || 0).toFixed(2)}</span>
+          <span>৳${parseFloat(order.total_amount || 0).toFixed(2)}</span>
         </div>
       `;
 

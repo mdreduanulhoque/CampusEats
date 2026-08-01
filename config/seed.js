@@ -102,6 +102,10 @@ async function seedDefaultUsers() {
       }
     }
 
+    // Seed Neptune Canteen, its Categories, and all 19 Menu Items
+    const seedNeptuneCanteen = require('./seed_neptune');
+    await seedNeptuneCanteen();
+
   } catch (error) {
     console.error('Seed error:', error.message);
   }
