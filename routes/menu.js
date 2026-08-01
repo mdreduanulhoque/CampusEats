@@ -32,12 +32,19 @@ router.get('/', async (req, res) => {
         m.*, 
         c.name AS category_name,
         k.name AS canteen_name,
-        COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-        COUNT(r.review_id) AS total_reviews
+        COALESCE(r.avg_rating, 0) AS avg_rating,
+        COALESCE(r.total_reviews, 0) AS total_reviews
       FROM MenuItems m
       LEFT JOIN Categories c ON m.category_id = c.category_id
       LEFT JOIN Canteens k ON m.canteen_id = k.canteen_id
-      LEFT JOIN Reviews r ON m.item_id = r.item_id
+      LEFT JOIN (
+        SELECT 
+          item_id, 
+          ROUND(AVG(rating), 1) AS avg_rating, 
+          COUNT(review_id) AS total_reviews
+        FROM Reviews 
+        GROUP BY item_id
+      ) r ON m.item_id = r.item_id
       WHERE m.is_active = TRUE
     `;
 
@@ -53,11 +60,12 @@ router.get('/', async (req, res) => {
       queryParams.push(parseInt(canteen_id));
     }
 
-    query += ` GROUP BY m.item_id ORDER BY k.name ASC, c.name ASC, m.name ASC`;
+    query += ` ORDER BY k.name ASC, c.name ASC, m.name ASC`;
 
     const [items] = await db.query(query, queryParams);
     res.json({ status: 'success', items });
   } catch (error) {
+    console.error('Fetch menu items error:', error);
     res.status(500).json({ status: 'error', message: 'Failed to fetch menu items.', error: error.message });
   }
 });
@@ -81,14 +89,20 @@ router.get('/compare', async (req, res) => {
         c.name AS category_name,
         k.name AS canteen_name,
         k.description AS canteen_description,
-        COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-        COUNT(r.review_id) AS total_reviews
+        COALESCE(r.avg_rating, 0) AS avg_rating,
+        COALESCE(r.total_reviews, 0) AS total_reviews
       FROM MenuItems m
       LEFT JOIN Categories c ON m.category_id = c.category_id
       LEFT JOIN Canteens k ON m.canteen_id = k.canteen_id
-      LEFT JOIN Reviews r ON m.item_id = r.item_id
+      LEFT JOIN (
+        SELECT 
+          item_id, 
+          ROUND(AVG(rating), 1) AS avg_rating, 
+          COUNT(review_id) AS total_reviews
+        FROM Reviews 
+        GROUP BY item_id
+      ) r ON m.item_id = r.item_id
       WHERE m.item_id IN (?) AND m.is_active = TRUE
-      GROUP BY m.item_id
       ORDER BY m.name ASC`,
       [idList]
     );
@@ -120,16 +134,22 @@ router.get('/similar/:id', async (req, res) => {
         c.name AS category_name,
         k.name AS canteen_name,
         k.description AS canteen_description,
-        COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-        COUNT(r.review_id) AS total_reviews
+        COALESCE(r.avg_rating, 0) AS avg_rating,
+        COALESCE(r.total_reviews, 0) AS total_reviews
       FROM MenuItems m
       LEFT JOIN Categories c ON m.category_id = c.category_id
       LEFT JOIN Canteens k ON m.canteen_id = k.canteen_id
-      LEFT JOIN Reviews r ON m.item_id = r.item_id
+      LEFT JOIN (
+        SELECT 
+          item_id, 
+          ROUND(AVG(rating), 1) AS avg_rating, 
+          COUNT(review_id) AS total_reviews
+        FROM Reviews 
+        GROUP BY item_id
+      ) r ON m.item_id = r.item_id
       WHERE m.is_active = TRUE 
         AND m.item_id != ? 
         AND (m.category_id = ? OR m.name LIKE ?)
-      GROUP BY m.item_id
       ORDER BY k.name ASC, m.price ASC`,
       [itemId, ref.category_id, `%${firstWord}%`]
     );
@@ -145,18 +165,26 @@ router.get('/:id', async (req, res) => {
   const itemId = req.params.id;
   try {
     const [items] = await db.query(
-      `SELECT m.*, c.name AS category_name, k.name AS canteen_name,
-              COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-              COUNT(r.review_id) AS total_reviews
+      `SELECT 
+        m.*, 
+        c.name AS category_name, 
+        k.name AS canteen_name,
+        COALESCE(r.avg_rating, 0) AS avg_rating,
+        COALESCE(r.total_reviews, 0) AS total_reviews
        FROM MenuItems m
        LEFT JOIN Categories c ON m.category_id = c.category_id
        LEFT JOIN Canteens k ON m.canteen_id = k.canteen_id
-       LEFT JOIN Reviews r ON m.item_id = r.item_id
-       WHERE m.item_id = ?
-       GROUP BY m.item_id`,
+       LEFT JOIN (
+         SELECT 
+           item_id, 
+           ROUND(AVG(rating), 1) AS avg_rating, 
+           COUNT(review_id) AS total_reviews
+         FROM Reviews 
+         GROUP BY item_id
+       ) r ON m.item_id = r.item_id
+       WHERE m.item_id = ?`,
       [itemId]
     );
-
 
     if (items.length === 0) {
       return res.status(404).json({ status: 'error', message: 'Menu item not found.' });

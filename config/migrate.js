@@ -1,6 +1,6 @@
 const db = require('./db');
 
-async function runMigration() {
+async function runMigration(exitOnComplete = false) {
   console.log('🔄 Starting CampusEats Database Migration...');
 
   try {
@@ -164,11 +164,19 @@ async function runMigration() {
     console.log('⭐ Default seed data & menu catalog populated successfully.');
 
     console.log('🎉 Migration completed successfully!');
-    process.exit(0);
+    if (exitOnComplete) {
+      process.exit(0);
+    }
   } catch (error) {
-    console.error('❌ Migration failed:', error);
-    process.exit(1);
+    console.error('❌ Migration failed:', error.message);
+    if (exitOnComplete) {
+      process.exit(1);
+    }
   }
 }
 
-runMigration();
+if (require.main === module) {
+  runMigration(true);
+}
+
+module.exports = runMigration;

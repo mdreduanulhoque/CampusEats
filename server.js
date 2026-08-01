@@ -4,7 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const db = require('./config/db');
-const seedDefaultUsers = require('./config/seed');
+const runMigration = require('./config/migrate');
 
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -71,8 +71,12 @@ app.get('*', (req, res) => {
 if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`🚀 CampusEats Server running on http://localhost:${PORT}`);
-    // Synchronize seed user passwords on startup
-    await seedDefaultUsers();
+    // Synchronize schema tables and seed data automatically on startup
+    try {
+      await runMigration(false);
+    } catch (err) {
+      console.error('Auto-migration error on startup:', err.message);
+    }
   });
 }
 
