@@ -102,14 +102,18 @@ async function runMigration(exitOnComplete = false) {
     `);
     console.log('✅ Table "Canteens" verified/created.');
 
-    // 2. Seed Default Canteens
-    await db.query(`
-      INSERT INTO Canteens (canteen_id, name, description) VALUES 
-      (1, 'Central Campus Canteen', 'Main campus dining hall serving fresh daily meals.'),
-      (2, 'North Wing Bistro', 'Specialty grill, beverages, and quick bites.')
-      ON DUPLICATE KEY UPDATE name=VALUES(name);
-    `);
-    console.log('✅ Default canteens seeded.');
+    // 2. Seed Default Canteens (Only if table is empty, preserving user modifications across app restarts)
+    const [canteenCount] = await db.query('SELECT COUNT(*) AS total FROM Canteens');
+    if (canteenCount[0].total === 0) {
+      await db.query(`
+        INSERT INTO Canteens (canteen_id, name, description) VALUES 
+        (1, 'Central Campus Canteen', 'Main campus dining hall serving fresh daily meals.'),
+        (2, 'North Wing Bistro', 'Specialty grill, beverages, and quick bites.')
+      `);
+      console.log('✅ Default canteens seeded.');
+    } else {
+      console.log('ℹ️ Canteens table already populated; skipping seed to preserve custom names.');
+    }
 
     // Helper to check if column exists
     const columnExists = async (table, column) => {
